@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Zelda Tracker Admin</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2rem;
+      background: #111;
+      color: #eee;
+    }
+    table, th, td {
+      border: 1px solid #999;
+      border-collapse: collapse;
+      padding: 0.5rem;
+    }
+    th {
+      background: #222;
+    }
+    button {
+      margin-left: 0.5rem;
+    }
+    input, select {
+      margin: 0.3rem;
+      padding: 0.3rem;
+    }
+    .hidden {
+      display: none;
+    }
+    .modal {
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.8);
+    }
+    .modal-content {
+      background-color: #222;
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 50%;
+      color: #eee;
+      border-radius: 5px;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      cursor: pointer;
+    }
+    .close:hover {
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Zelda Tracker Admin</h1>
+
+  <h2>Create New Race</h2>
+
+  Race Name:
+  <input id="raceName" placeholder="Race name" /><br/><br/>
+
+  Number of Players:
+  <select id="numPlayers" onchange="renderPlayerDropdowns()">
+    <option value="2">2 Players</option>
+    <option value="4">4 Players</option>
+  </select><br/><br/>
+
+  <div id="playerDropdowns"></div>
+
+  <button onclick="createRace()">Create Race</button>
+
+  <h2>Existing Races</h2>
+  <table id="racesTable">
+    <thead>
+      <tr>
+        <th>Race ID</th>
+        <th>Name</th>
+        <th>API Key</th>
+        <th>State</th>
+        <th>Created</th>
+        <th>Players</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>Library Players</h2>
+  <button onclick="showPlayerForm()">Add New Player</button>
+
+  <table id="playersTable">
+    <thead>
+      <tr>
+        <th>Internal Name</th>
+        <th>Display Name</th>
+        <th>Tracker Type</th>
+        <th>Tracker Name</th>
+        <th>Racetime Name</th>
+        <th>Twitch Name</th>
+        <th>Crop (L/R/T/B)</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="playerFormContainer" class="hidden">
+    <h3 id="formTitle">New Player</h3>
+    <form id="playerForm" onsubmit="savePlayer(event)">
+      <input id="internalName" placeholder="Internal Name" required /><br/>
+      <input id="displayName" placeholder="Display Name" /><br/>
+      <input id="trackerType" placeholder="Tracker Type" /><br/>
+      <input id="trackerName" placeholder="Tracker Name" /><br/>
+      <input id="racetimeName" placeholder="Racetime Name" /><br/>
+      <input id="twitchName" placeholder="Twitch Name" /><br/>
+      Crop Left: <input id="cropLeft" type="number" value="0" /><br/>
+      Crop Right: <input id="cropRight" type="number" value="0" /><br/>
+      Crop Top: <input id="cropTop" type="number" value="0" /><br/>
+      Crop Bottom: <input id="cropBottom" type="number" value="0" /><br/>
+      <button type="submit">Save</button>
+      <button type="button" onclick="hidePlayerForm()">Cancel</button>
+    </form>
+  </div>
+
+  <div id="editRaceModal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" onclick="hideEditRaceModal()">&times;</span>
+      <h2>Edit Race</h2>
+      <label>Race Name:</label><br>
+      <input id="editRaceName" /><br><br>
+
+      <label>Race State:</label><br>
+      <select id="editRaceState">
+        <option value="In Progress">In Progress</option>
+        <option value="Complete">Complete</option>
+      </select><br><br>
+
+      <label>Number of Players:</label><br>
+      <select id="editNumPlayers" onchange="renderEditPlayerDropdowns()">
+        <option value="2">2 Players</option>
+        <option value="4">4 Players</option>
+      </select><br><br>
+
+      <div id="editPlayerDropdowns"></div>
+
+      <button onclick="saveEditedRace()">Save Changes</button>
+      <button onclick="hideEditRaceModal()">Cancel</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let allPlayers = [];
+    let currentEditRaceId = null;
+    let currentEditPlayers = [];
+
+    // ===============================
+    // RACES
+    // ===============================
+
+    function loadRaces() {
+      fetch('/api/races')
+        .then(res => res.json())
+        .then(races => {
+          const tbody = document.querySelector('#racesTable tbody');
+          tbody.innerHTML = '';
+
+          races.forEach(race => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${race.race_id}</td>
+              <td>${race.name}</td>
+              <td>${race.api_key || "(missing)"}</td>
+              <td>${race.state}</td>
+              <td>${race.created_at}</td>
+              <td id="players-${race.race_id}">Loading...</td>
+              <td>
+                <button onclick="editRace('${race.race_id}')">Edit</button>
+                <button onclick="deleteRace('${race.race_id}')">Delete</button>
+              </td>
+            `;
+            tbody.appendChild(row);
+
+            fetch(`/api/race/${race.race_id}/players`)
+              .then(res => res.json())
+              .then(players => {
+                const displayNames = players.map(p => p.displayName || p.backendName);
+                document.getElementById(`players-${race.race_id}`).textContent =
+                  displayNames.length > 0
+                    ? displayNames.join(', ')
+                    : "(none)";
+              })
+              .catch(() => {
+                document.getElementById(`players-${race.race_id}`).textContent =
+                  "Error loading players";
+              });
+          });
+        });
+    }
+
+    function createRace() {
+      const name = document.getElementById('raceName').value;
+      const numPlayers = parseInt(document.getElementById('numPlayers').value, 10);
+      const racers = [];
+
+      for (let i = 0; i < numPlayers; i++) {
+        const select = document.getElementById(`racePlayer${i}`);
+        if (select && select.value) {
+          racers.push(select.value);
+        }
+      }
+
+      fetch('/api/races', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, racers })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(`Created race:\nID: ${data.race_id}\nAPI Key: ${data.api_key}`);
+        loadRaces();
+      });
+    }
+
+    function editRace(raceId) {
+      fetch(`/api/races`)
+        .then(res => res.json())
+        .then(races => {
+          const race = races.find(r => r.race_id === raceId);
+          if (!race) {
+            alert("Race not found!");
+            return;
+          }
+
+          currentEditRaceId = raceId;
+
+          document.getElementById('editRaceName').value = race.name;
+          document.getElementById('editRaceState').value = race.state;
+
+          fetch(`/api/race/${raceId}/players`)
+            .then(res => res.json())
+            .then(players => {
+              currentEditPlayers = players.map(p => p.backendName);
+              document.getElementById('editNumPlayers').value = players.length;
+              renderEditPlayerDropdowns();
+              showEditRaceModal();
+            });
+        });
+    }
+
+    function saveEditedRace() {
+      const name = document.getElementById('editRaceName').value;
+      const state = document.getElementById('editRaceState').value;
+      const numPlayers = parseInt(document.getElementById('editNumPlayers').value, 10);
+      const racers = [];
+
+      for (let i = 0; i < numPlayers; i++) {
+        const select = document.getElementById(`editRacePlayer${i}`);
+        if (select && select.value) {
+          racers.push(select.value);
+        }
+      }
+
+      fetch(`/api/race/${currentEditRaceId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, state, racers })
+      }).then(() => {
+        hideEditRaceModal();
+        loadRaces();
+      });
+    }
+
+    function deleteRace(raceId) {
+      if (!confirm(`Delete race ${raceId}?`)) return;
+      fetch(`/api/race/${raceId}`, { method: 'DELETE' })
+        .then(() => loadRaces());
+    }
+
+    function renderPlayerDropdowns() {
+      const numPlayers = parseInt(document.getElementById('numPlayers').value, 10);
+      const container = document.getElementById('playerDropdowns');
+      container.innerHTML = '';
+
+      for (let i = 0; i < numPlayers; i++) {
+        const label = document.createElement('label');
+        label.textContent = `Player ${i + 1}: `;
+        const select = document.createElement('select');
+        select.id = `racePlayer${i}`;
+        select.dataset.index = i;
+        select.style.marginBottom = "10px";
+        select.addEventListener("change", handleRacerChange);
+        container.appendChild(label);
+        container.appendChild(select);
+        container.appendChild(document.createElement('br'));
+      }
+
+      fetch('/api/library-players')
+        .then(res => res.json())
+        .then(players => {
+          allPlayers = players;
+          refreshDropdowns();
+        });
+    }
+
+    function renderEditPlayerDropdowns() {
+      const numPlayers = parseInt(document.getElementById('editNumPlayers').value, 10);
+      const container = document.getElementById('editPlayerDropdowns');
+      container.innerHTML = '';
+
+      for (let i = 0; i < numPlayers; i++) {
+        const label = document.createElement('label');
+        label.textContent = `Player ${i + 1}: `;
+        const select = document.createElement('select');
+        select.id = `editRacePlayer${i}`;
+        select.dataset.index = i;
+        select.style.marginBottom = "10px";
+        select.addEventListener("change", handleEditRacerChange);
+        container.appendChild(label);
+        container.appendChild(select);
+        container.appendChild(document.createElement('br'));
+      }
+
+      fetch('/api/library-players')
+        .then(res => res.json())
+        .then(players => {
+          allPlayers = players;
+
+          for (let i = 0; i < numPlayers; i++) {
+            const select = document.getElementById(`editRacePlayer${i}`);
+            if (!select) continue;
+
+            select.innerHTML = '';
+
+            const blankOption = document.createElement('option');
+            blankOption.value = "";
+            blankOption.textContent = "Select a racer...";
+            select.appendChild(blankOption);
+
+            allPlayers.forEach(p => {
+              const option = document.createElement('option');
+              option.value = p.internal_name;
+              option.textContent = p.display_name || p.internal_name;
+              select.appendChild(option);
+            });
+
+            if (currentEditPlayers[i]) {
+              select.value = currentEditPlayers[i];
+            }
+          }
+
+          refreshEditDropdowns();
+        });
+    }
+
+    function refreshDropdowns() {
+      const numPlayers = parseInt(document.getElementById('numPlayers').value, 10);
+      const selectedValues = [];
+      for (let i = 0; i < numPlayers; i++) {
+        const select = document.getElementById(`racePlayer${i}`);
+        if (select && select.value) {
+          selectedValues.push(select.value);
+        }
+      }
+      for (let i = 0; i < numPlayers; i++) {
+        const select = document.getElementById(`racePlayer${i}`);
+        if (!select) continue;
+        const oldValue = select.value;
+        select.innerHTML = '';
+        const blankOption = document.createElement('option');
+        blankOption.value = "";
+        blankOption.textContent = "Select a racer...";
+        select.appendChild(blankOption);
+        allPlayers.forEach(player => {
+          if (selectedValues.includes(player.internal_name) && player.internal_name !== oldValue) return;
+          const option = document.createElement('option');
+          option.value = player.internal_name;
+          option.textContent = player.display_name || player.internal_name;
+          select.appendChild(option);
+        });
+        if (oldValue && [...select.options].some(opt => opt.value === oldValue)) {
+          select.value = oldValue;
+        } else {
+          select.value = "";
+        }
+      }
+    }
+
+    function refreshEditDropdowns() {
+      const numPlayers = parseInt(document.getElementById('editNumPlayers').value, 10);
+      const selectedValues = [];
+      for (let i = 0; i < numPlayers; i++) {
+        const select = document.getElementById(`editRacePlayer${i}`);
+        if (select && select.value) {
+          selectedValues.push(select.value);
+        }
+      }
+      for (let i = 0; i < numPlayers; i++) {
+        const select = document.getElementById(`editRacePlayer${i}`);
+        if (!select) continue;
+        const oldValue = select.value;
+        select.innerHTML = '';
+        const blankOption = document.createElement('option');
+        blankOption.value = "";
+        blankOption.textContent = "Select a racer...";
+        select.appendChild(blankOption);
+        allPlayers.forEach(player => {
+          if (selectedValues.includes(player.internal_name) && player.internal_name !== oldValue) return;
+          const option = document.createElement('option');
+          option.value = player.internal_name;
+          option.textContent = player.display_name || player.internal_name;
+          select.appendChild(option);
+        });
+        if (oldValue && [...select.options].some(opt => opt.value === oldValue)) {
+          select.value = oldValue;
+        } else if (currentEditPlayers[i]) {
+          select.value = currentEditPlayers[i];
+        } else {
+          select.value = "";
+        }
+      }
+    }
+
+    function handleRacerChange() {
+      refreshDropdowns();
+    }
+
+    function handleEditRacerChange() {
+      refreshEditDropdowns();
+    }
+
+    function showEditRaceModal() {
+      document.getElementById('editRaceModal').classList.remove('hidden');
+    }
+
+    function hideEditRaceModal() {
+      document.getElementById('editRaceModal').classList.add('hidden');
+    }
+
+    // ===============================
+    // PLAYERS
+    // ===============================
+
+    function loadPlayers() {
+      fetch('/api/library-players')
+        .then(res => res.json())
+        .then(players => {
+          const tbody = document.querySelector('#playersTable tbody');
+          tbody.innerHTML = '';
+          players.forEach(p => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${p.internal_name}</td>
+              <td>${p.display_name || ""}</td>
+              <td>${p.tracker_type || ""}</td>
+              <td>${p.tracker_name || ""}</td>
+              <td>${p.racetime_name || ""}</td>
+              <td>${p.twitch_name || ""}</td>
+              <td>${p.crop_left || 0}/${p.crop_right || 0}/${p.crop_top || 0}/${p.crop_bottom || 0}</td>
+              <td>
+                <button onclick="editPlayer('${p.internal_name}')">Edit</button>
+                <button onclick="deletePlayer('${p.internal_name}')">Delete</button>
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+        });
+    }
+
+    function showPlayerForm(player = null) {
+      document.getElementById('playerFormContainer').classList.remove('hidden');
+      if (player) {
+        editMode = true;
+        editInternalName = player.internal_name;
+        document.getElementById('formTitle').textContent = `Edit Player: ${player.internal_name}`;
+        document.getElementById('internalName').value = player.internal_name;
+        document.getElementById('internalName').disabled = true;
+        document.getElementById('displayName').value = player.display_name || "";
+        document.getElementById('trackerType').value = player.tracker_type || "";
+        document.getElementById('trackerName').value = player.tracker_name || "";
+        document.getElementById('racetimeName').value = player.racetime_name || "";
+        document.getElementById('twitchName').value = player.twitch_name || "";
+        document.getElementById('cropLeft').value = player.crop_left || 0;
+        document.getElementById('cropRight').value = player.crop_right || 0;
+        document.getElementById('cropTop').value = player.crop_top || 0;
+        document.getElementById('cropBottom').value = player.crop_bottom || 0;
+      } else {
+        editMode = false;
+        editInternalName = null;
+        document.getElementById('formTitle').textContent = "New Player";
+        document.getElementById('playerForm').reset();
+        document.getElementById('internalName').disabled = false;
+      }
+    }
+
+    function hidePlayerForm() {
+      document.getElementById('playerFormContainer').classList.add('hidden');
+    }
+
+    function savePlayer(e) {
+      e.preventDefault();
+      const data = {
+        internal_name: document.getElementById('internalName').value,
+        display_name: document.getElementById('displayName').value,
+        tracker_type: document.getElementById('trackerType').value,
+        tracker_name: document.getElementById('trackerName').value,
+        racetime_name: document.getElementById('racetimeName').value,
+        twitch_name: document.getElementById('twitchName').value,
+        crop_left: parseInt(document.getElementById('cropLeft').value || "0"),
+        crop_right: parseInt(document.getElementById('cropRight').value || "0"),
+        crop_top: parseInt(document.getElementById('cropTop').value || "0"),
+        crop_bottom: parseInt(document.getElementById('cropBottom').value || "0")
+      };
+
+      if (editMode) {
+        fetch(`/api/library-players/${editInternalName}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        }).then(() => {
+          hidePlayerForm();
+          loadPlayers();
+        });
+      } else {
+        fetch('/api/library-players', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        }).then(() => {
+          hidePlayerForm();
+          loadPlayers();
+        });
+      }
+    }
+
+    function editPlayer(internalName) {
+      fetch(`/api/library-players`)
+        .then(res => res.json())
+        .then(players => {
+          const player = players.find(p => p.internal_name === internalName);
+          if (player) {
+            showPlayerForm(player);
+          }
+        });
+    }
+
+    function deletePlayer(internalName) {
+      if (!confirm(`Delete player ${internalName}?`)) return;
+      fetch(`/api/library-players/${internalName}`, {
+        method: 'DELETE'
+      }).then(() => loadPlayers());
+    }
+
+    loadRaces();
+    loadPlayers();
+    renderPlayerDropdowns();
+
+    socket.on('admin:racesUpdated', () => {
+      loadRaces();
+    });
+  </script>
+</body>
+</html>

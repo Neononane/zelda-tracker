@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Zelda Tracker Overlay</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2rem;
+      background: #111;
+      color: #eee;
+    }
+    pre {
+      background: #222;
+      padding: 1rem;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    h2 {
+      margin-top: 2rem;
+      color: #f5b041;
+    }
+  </style>
+</head>
+<body>
+  <h1>Zelda Tracker Overlay</h1>
+
+  <h2>Race Info</h2>
+  <pre id="raceInfo"></pre>
+
+  <h2>Items</h2>
+  <pre id="items"></pre>
+
+  <h2>Players</h2>
+  <pre id="players"></pre>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const raceId = prompt("Enter raceId:");
+    const raceInfoEl = document.getElementById('raceInfo');
+    const itemsEl = document.getElementById('items');
+    const playersEl = document.getElementById('players');
+    const socket = io();
+
+    // Fetch initial race data
+    fetch(`/api/races`)
+      .then(response => response.json())
+      .then(races => {
+        const race = races.find(r => r.race_id === raceId);
+        if (race) {
+          raceInfoEl.textContent = JSON.stringify(race, null, 2);
+        } else {
+          raceInfoEl.textContent = `Race ${raceId} not found.`;
+        }
+      });
+
+    // Fetch initial items
+    fetch(`/api/race/${raceId}/items`)
+      .then(response => response.json())
+      .then(items => {
+        itemsEl.textContent = JSON.stringify(items, null, 2);
+      });
+
+    // Fetch initial players
+    fetch(`/api/race/${raceId}/players`)
+      .then(response => response.json())
+      .then(players => {
+        playersEl.textContent = JSON.stringify(players, null, 2);
+      });
+
+    // Listen for live updates
+
+    // Players update
+    socket.on(`tracker:update:${raceId}`, (players) => {
+      playersEl.textContent = JSON.stringify(players, null, 2);
+    });
+
+    // Items update
+    socket.on(`race:itemsUpdate:${raceId}`, (items) => {
+      console.log("Updated items:", items);
+      itemsEl.textContent = JSON.stringify(items, null, 2);
+    });
+
+    // Optionally: Listen for race state changes
+    socket.on('admin:racesUpdated', () => {
+      // Refetch the race info if race properties might have changed
+      fetch(`/api/races`)
+        .then(response => response.json())
+        .then(races => {
+          const race = races.find(r => r.race_id === raceId);
+          if (race) {
+            raceInfoEl.textContent = JSON.stringify(race, null, 2);
+          }
+        });
+    });
+  </script>
+</body>
+</html>
