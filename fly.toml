@@ -9,7 +9,7 @@ primary_region = 'bos'
 [build]
 
 [[mounts]]
-  source = 'zelda_data'
+  source = 'data'
   destination = '/data'
   auto_extend_size_threshold = 80
   auto_extend_size_increment = '1GB'
