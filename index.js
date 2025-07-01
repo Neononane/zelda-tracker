@@ -15,8 +15,8 @@ app.use(express.json());
 app.use(express.static('public')); // to serve overlay page later
 
 // SQLite DB
-const db = new sqlite3.Database('./data/tracker.db');
-const playersDb = new sqlite3.Database('./data/players.db')
+const db = new sqlite3.Database('/data/tracker.db');
+const playersDb = new sqlite3.Database('/data/players.db')
 
 const fs = require('fs');
 
