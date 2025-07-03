@@ -1,0 +1,265 @@
+/* Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #121212;
+  color: #eee;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.5;
+  padding: 20px;
+}
+
+.tracker-container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.staff-info {
+  font-size: 16px;
+  color: #999;
+}
+
+.header-title {
+  font-size: 24px;
+  color: #fff;
+}
+
+.main-layout {
+  display: grid;
+  grid-template-columns: 1fr 240px 1fr;
+  gap: 30px;
+}
+
+.player-panel {
+  background: #1e1e1e;
+  border-radius: 8px;
+  border: 2px solid #333;
+  padding: 20px;
+  position: relative;
+}
+
+.player-1 {
+  border-color: green;
+}
+
+.player-2 {
+  border-color: red;
+}
+
+.timer {
+  background: #333;
+  color: #fff;
+  padding: 5px 10px;
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 4px;
+  position: absolute;
+  top: 15px;
+  left: 15px;
+}
+
+.video-box {
+  background: #444;
+  color: #999;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  min-height: 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  border-radius: 4px;
+}
+
+.player-name {
+  margin-top: 15px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.player-final {
+  margin-top: 5px;
+  font-size: 16px;
+  color: #ff0;
+}
+
+.player-winner {
+  margin-top: 5px;
+  font-size: 16px;
+  color: gold;
+}
+
+.player-speaker {
+  margin-top: 10px;
+}
+
+.level-triforces {
+  margin-top: 15px;
+  display: grid;
+  grid-template-columns: repeat(4, 30px);
+  gap: 8px;
+}
+
+.level-triforces img {
+  width: 30px;
+  height: 30px;
+}
+
+.player-grid {
+  margin-top: 15px;
+  display: grid;
+  grid-template-columns: repeat(4, 40px);
+  gap: 10px;
+}
+
+.player-grid img {
+  width: 40px;
+  height: 40px;
+}
+
+.tracker-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.tracker-icon img {
+  width: 40px;
+  height: 40px;
+}
+.tracker-center {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  width: 220px;
+}
+.tracker-row {
+  display: grid;
+  grid-template-columns: 32px 1fr 32px;
+  gap: 8px;
+  align-items: center;
+  background: #1e1e1e;
+  padding: 4px 8px;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.tracker-icon img {
+  width: 40px;
+  height: 40px;
+}
+
+.tracker-label {
+  color: #eee;
+  font-size: 14px;
+  text-align: center;
+  min-width: 80px;
+}
+.sprite {
+  width: 32px;
+  height: 32px;
+  background-image: url("images/z1-item-sprite-sheet-180.png");
+  background-repeat: no-repeat;
+  background-size: 160px auto;
+  image-rendering: pixelated;
+}
+
+.sprite.candle {
+  background-position: 0px -64px;
+}
+
+.sprite.arrow {
+  background-position: -32px 0px;
+}
+
+.sprite.bow {
+  background-position: -64px -32px;
+}
+
+.sprite.ladder {
+  background-position: -64px -64px;
+}
+
+.sprite.raft {
+  background-position: -96px -96px;
+}
+
+.sprite.recorder {
+  background-position: -128px 0px;
+}
+
+.sprite.power-bracelet {
+  background-position: -96px -32px;
+}
+
+.sprite.ring {
+  background-position: -128px -32px;
+}
+
+.sprite.magical-key {
+  background-position: 0px -96px;
+}
+
+.sprite.wand {
+  background-position: -32px -128px;
+}
+
+.sprite.book {
+  background-position: -96px 0px;
+}
+
+.sprite.boomerang {
+  background-position: 0px -32px;
+}
+
+.sprite.magical-boomerang {
+  background-position: -32px -32px;
+}
+
+.sprite.sword {
+  background-position: -128px -96px;
+}
+
+.sprite.heart-container {
+  background-position: -96px -64px;
+}
+
+
+.tracker-center {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.tracker-row {
+  display: grid;
+  grid-template-columns: 32px auto 32px;
+  gap: 10px;
+  align-items: center;
+  background: #1e1e1e;
+  padding: 6px 10px;
+  border-radius: 4px;
+  min-width: 220px;
+}
+
+
+.tracker-label {
+  color: #eee;
+  font-size: 14px;
+  text-align: center;
+}
