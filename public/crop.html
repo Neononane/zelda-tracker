@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Crop Tool</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet" />
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+      background: #222;
+      color: #fff;
+    }
+    #image-container {
+      max-width: 100%;
+      max-height: 80vh;
+      margin-bottom: 10px;
+    }
+    #cropped-preview {
+      margin-top: 10px;
+      border: 2px solid #f00;
+    }
+    button {
+      margin: 5px;
+      padding: 8px 12px;
+      background: #f00;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #c00;
+    }
+  </style>
+</head>
+<body>
+  <h1>Crop Tool</h1>
+  <p id="source-info"></p>
+
+  <div id="image-container">
+    <img id="screenshot" style="max-width: 100%; display: none;" />
+  </div>
+
+  <div id="buttons">
+    <button id="new-screenshot">Get New Screenshot</button>
+    <button id="crop-button" style="display: none;">Crop Selected Area</button>
+  </div>
+
+  <div id="cropped-container" style="display: none;">
+    <h3>Cropped Preview:</h3>
+    <img id="cropped-preview" />
+    <br/>
+    <button id="accept-crop">Accept Crop</button>
+    <button id="retry-crop">Retry</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+  <script>
+    let cropper;
+    let source;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      // Get source from query param
+      const params = new URLSearchParams(window.location.search);
+      source = params.get("source");
+
+      if (!source || !["player1", "player2"].includes(source)) {
+        alert("Invalid source specified.");
+        return;
+      }
+
+      document.getElementById("source-info").textContent = `Editing crop for: ${source}`;
+
+      // Wire buttons
+      document.getElementById("new-screenshot").addEventListener("click", loadScreenshot);
+      document.getElementById("crop-button").addEventListener("click", cropImage);
+      document.getElementById("accept-crop").addEventListener("click", acceptCrop);
+      document.getElementById("retry-crop").addEventListener("click", resetCropUI);
+    });
+
+    function loadScreenshot() {
+      // Call backend to generate screenshot for this source
+      fetch(`/api/screenshot?source=${source}`)
+        .then(res => res.json())
+        .then(data => {
+          console.log("Screenshot triggered:", data);
+          const img = document.getElementById("screenshot");
+          img.src = `/screenshots/${source}.jpg?cacheBust=` + new Date().getTime();
+          img.style.display = "block";
+
+          // Destroy previous cropper if exists
+          if (cropper) {
+            cropper.destroy();
+          }
+          cropper = new Cropper(img, {
+            viewMode: 1,
+            autoCrop: true,
+          });
+
+          document.getElementById("crop-button").style.display = "inline-block";
+          document.getElementById("cropped-container").style.display = "none";
+        });
+    }
+
+    function cropImage() {
+      const canvas = cropper.getCroppedCanvas();
+      const croppedDataURL = canvas.toDataURL("image/png");
+
+      document.getElementById("cropped-preview").src = croppedDataURL;
+      document.getElementById("cropped-container").style.display = "block";
+
+      // Hide original
+      document.getElementById("screenshot").style.display = "none";
+      document.getElementById("crop-button").style.display = "none";
+    }
+
+    function acceptCrop() {
+      const cropData = cropper.getData(true);
+      console.log("Crop Data:", cropData);
+
+      // Send to backend to update OBS
+      fetch("/api/set-crop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source: source,
+          crop: {
+            x: Math.round(cropData.x),
+            y: Math.round(cropData.y),
+            width: Math.round(cropData.width),
+            height: Math.round(cropData.height)
+          }
+        })
+      }).then(res => res.json())
+        .then(data => {
+          alert("Crop applied!");
+          console.log("OBS crop set:", data);
+          resetCropUI();
+        });
+    }
+
+    function resetCropUI() {
+      document.getElementById("cropped-container").style.display = "none";
+      document.getElementById("screenshot").style.display = "none";
+      document.getElementById("crop-button").style.display = "none";
+    }
+  </script>
+</body>
+</html>
