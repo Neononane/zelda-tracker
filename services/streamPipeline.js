@@ -18,7 +18,7 @@ async function runStreamPipeline(player1, player2) {
 
   console.log("🚀 Launching OBS...");
   await execAsync(`export DISPLAY=:98`);
-  await execAsync(`obs --multi --obs-port=4455 &`);
+  await execAsync(`obs --multi --obs-port=4455`);
   console.log("✅ OBS launched.");
 
   await sleep(10 * 1000);
