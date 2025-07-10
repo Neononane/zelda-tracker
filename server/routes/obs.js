@@ -97,8 +97,8 @@ router.post("/set-crop", express.json(), async (req, res) => {
       sceneName: currentProgramSceneName,
       sceneItemId
     });
-
-    const transform = sceneItemTransform.sceneItemTransform;
+    console.log("Below is the scene item transform");
+    console.log(sceneItemTransform);
 
     const origWidth = sceneItemTransform.sourceWidth;
     const origHeight = sceneItemTransform.sourceHeight;
@@ -140,6 +140,25 @@ router.post("/set-crop", express.json(), async (req, res) => {
       cropRight,
       cropBottom
     });
+
+    console.log({
+      origWidth,
+      origHeight,
+      boundingBoxWidth,
+      boundingBoxHeight,
+      crop,
+      scaleX,
+      scaleY,
+      trueCropX,
+      trueCropY,
+      trueCropWidth,
+      trueCropHeight,
+      cropLeft,
+      cropTop,
+      cropRight,
+      cropBottom
+    });
+
 
     await obs.call("SetSceneItemTransform", {
       sceneName: currentProgramSceneName,
