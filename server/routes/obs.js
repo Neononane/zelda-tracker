@@ -109,8 +109,8 @@ router.post("/set-crop", express.json(), async (req, res) => {
         .json({ error: "Could not determine source dimensions" });
     }
 
-    const boundingBoxWidth = sceneItemTransform.boundsWidth;
-    const boundingBoxHeight = sceneItemTransform.boundsHeight;
+    const boundsWidth = sceneItemTransform.boundsWidth;
+    const boundsHeight = sceneItemTransform.boundsHeight;
 
     const screenshotWidth = 640;
     const screenshotHeight = 360;
