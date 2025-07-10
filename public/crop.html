@@ -118,12 +118,21 @@
       const cropData = cropper.getData(true);
       console.log("Crop Data:", cropData);
 
+      const sourceMap = {
+        player1: 'Player1',
+        player2: 'Player2',
+        player3: 'Player3',
+        player4: 'Player4',
+      };
+
+      const obsSourceName = sourceMap[source?.toLowerCase()];
+
       // Send to backend to update OBS
       fetch("/api/obs/set-crop", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          source: source,
+          source: obsSourceName,
           crop: {
             x: Math.round(cropData.x),
             y: Math.round(cropData.y),
