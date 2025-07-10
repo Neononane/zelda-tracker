@@ -98,6 +98,8 @@ router.post("/set-crop", express.json(), async (req, res) => {
       sceneItemId
     });
 
+    const transform = sceneItemTransform.sceneItemTransform;
+
     const origWidth = sceneItemTransform.sourceWidth;
     const origHeight = sceneItemTransform.sourceHeight;
 
@@ -107,13 +109,27 @@ router.post("/set-crop", express.json(), async (req, res) => {
         .json({ error: "Could not determine source dimensions" });
     }
 
-    const cropLeft = Math.round(crop.x);
-    const cropTop = Math.round(crop.y);
-    const cropRight = Math.round(
-      origWidth - (crop.x + crop.width)
+    const boundingBoxWidth = transform.boundsWidth || origWidth;
+    const boundingBoxHeight = transform.boundsHeight || origHeight;
+
+    const scaleX = origWidth / boundingBoxWidth;
+    const scaleY = origHeight / boundingBoxHeight;
+
+    const trueCropX = crop.x * scaleX;
+    const trueCropY = crop.y * scaleY;
+    const trueCropWidth = crop.width * scaleX;
+    const trueCropHeight = crop.height * scaleY;
+ 
+
+    const cropLeft = Math.round(trueCropX);
+    const cropTop = Math.round(trueCropY);
+    const cropRight = Math.max(
+      0,
+      Math.round(origWidth - (trueCropX + trueCropWidth))
     );
-    const cropBottom = Math.round(
-      origHeight - (crop.y + crop.height)
+    const cropBottom = Math.max(
+      0,
+      Math.round(origHeight - (trueCropY + trueCropHeight))
     );
 
     console.log({
