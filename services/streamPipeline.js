@@ -21,6 +21,19 @@ function launchOBS() {
   obsProcess.unref();
 }
 
+function startXvfb() {
+  console.log("🚀 Launching Xvfb...");
+
+  const xvfb = spawn(
+    "Xvfb",
+    [":98", "-screen", "0", "1920x1080x24", "-ac"],
+    { detached: true, stdio: "ignore" }
+  );
+  xvfb.unref();
+
+  process.env.DISPLAY = ":98";
+}
+
 function startTwitchFIFOStreams(player1, player2) {
   console.log("🚀 Launching twitchFIFOStreams.js...");
 
@@ -38,7 +51,10 @@ function startTwitchFIFOStreams(player1, player2) {
 
 async function runStreamPipeline(player1, player2) {
   startTwitchFIFOStreams(player1, player2);
-  await sleep(10 * 1000);
+  await sleep(15 * 1000);
+
+  startXvfb();
+  await sleep(5 * 1000);
 
   launchOBS();
   await sleep(10 * 1000);
