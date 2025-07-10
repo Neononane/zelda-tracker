@@ -109,28 +109,32 @@ router.post("/set-crop", express.json(), async (req, res) => {
         .json({ error: "Could not determine source dimensions" });
     }
 
-    const boundingBoxWidth = 561;
-    const boundingBoxHeight = 461;
+    const boundingBoxWidth = sceneItemTransform.boundsWidth;
+    const boundingBoxHeight = sceneItemTransform.boundsHeight;
 
     const scaleX = origWidth / boundingBoxWidth;
     const scaleY = origHeight / boundingBoxHeight;
 
-    const trueCropX = crop.x * scaleX;
-    const trueCropY = crop.y * scaleY;
-    const trueCropWidth = crop.width * scaleX;
-    const trueCropHeight = crop.height * scaleY;
- 
+    // Convert crop box from bounding box → source pixels
+    let trueCropX = crop.x * scaleX;
+    let trueCropY = crop.y * scaleY;
+    let trueCropWidth = crop.width * scaleX;
+    let trueCropHeight = crop.height * scaleY;
+
+    // Clamp
+    trueCropX = Math.max(0, Math.min(trueCropX, origWidth));
+    trueCropY = Math.max(0, Math.min(trueCropY, origHeight));
+    trueCropWidth = Math.max(0, Math.min(trueCropWidth, origWidth - trueCropX));
+    trueCropHeight = Math.max(0, Math.min(trueCropHeight, origHeight - trueCropY));
+
+    // Compute remaining edges
+    const remainingWidth = origWidth - (trueCropX + trueCropWidth);
+    const remainingHeight = origHeight - (trueCropY + trueCropHeight);
 
     const cropLeft = Math.round(trueCropX);
     const cropTop = Math.round(trueCropY);
-    const cropRight = Math.max(
-      0,
-      Math.round(origWidth - (trueCropX + trueCropWidth))
-    );
-    const cropBottom = Math.max(
-      0,
-      Math.round(origHeight - (trueCropY + trueCropHeight))
-    );
+    const cropRight = Math.round(remainingWidth);
+    const cropBottom = Math.round(remainingHeight);
 
     console.log({
       origWidth,
