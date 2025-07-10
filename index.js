@@ -6,7 +6,7 @@ const sqlite3 = require('sqlite3').verbose();
 const crypto = require('crypto');
 const path = require('path');
 const obsRouter = require('./server/routes/obs')
-const startStreamRouter = require('./server/routes/startStream';)
+const startStreamRouter = require('./server/routes/startStream');
 
 const app = express();
 const server = http.createServer(app);
