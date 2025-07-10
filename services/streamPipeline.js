@@ -10,7 +10,14 @@ async function runStreamPipeline(player1, player2) {
   startTwitchFIFOStreams(player1, player2);
   await sleep(10 * 1000);
 
+  console.log("Starting Screen...");
+  await execAsync(`Xvfb :98 -screen 0 1920x1080x24 -ac &`);
+  console.log("✅ Screen launched.");
+
+  await sleep(2 * 1000);
+
   console.log("🚀 Launching OBS...");
+  await execAsync(`export DISPLAY=:98`);
   await execAsync(`obs --multi --obs-port=4455 &`);
   console.log("✅ OBS launched.");
 
