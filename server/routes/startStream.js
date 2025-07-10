@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const sqlite3 = require("sqlite3").verbose();
-const { runStreamPipeline } = require("../services/streamPipeline");
+const { runStreamPipeline } = require("../../services/streamPipeline");
 
 router.post("/start-stream/:raceId", async (req, res) => {
   const raceId = req.params.raceId;
