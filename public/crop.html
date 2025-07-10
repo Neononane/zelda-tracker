@@ -119,7 +119,7 @@
       console.log("Crop Data:", cropData);
 
       // Send to backend to update OBS
-      fetch("/api/set-crop", {
+      fetch("/api/obs/set-crop", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
