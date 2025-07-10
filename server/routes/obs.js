@@ -157,8 +157,8 @@ router.post("/set-crop", express.json(), async (req, res) => {
     console.log({
       origWidth,
       origHeight,
-      boundingBoxWidth,
-      boundingBoxHeight,
+      boundsWidth,
+      boundsHeight,
       crop,
       scaleX,
       scaleY,
