@@ -33,7 +33,7 @@ await obs.call("SetVideoSettings", {
       streamServiceType: "rtmp_custom",
       streamServiceSettings: {
         server: "rtmp://live.twitch.tv/app/",
-        key: "live_1328725455_4WHgEh0WGn35vGDMGo4e6YtZBEEMT2",
+        key: process.env.TWITCH_KEY,
         use_auth: false
       }
     });

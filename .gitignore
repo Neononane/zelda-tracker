@@ -1,3 +1,4 @@
 node_modules/
 players.db
 tracker.db
+.env
