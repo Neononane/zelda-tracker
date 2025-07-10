@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS races (
   race_id TEXT PRIMARY KEY,
   name TEXT,
   api_key TEXT,
-  state TEXT DEFAULT 'In Progress',
+  state TEXT DEFAULT 'Ready for Stream',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

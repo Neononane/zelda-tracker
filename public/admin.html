@@ -138,6 +138,7 @@
 
       <label>Race State:</label><br>
       <select id="editRaceState">
+        <option value="Ready for Stream">Ready for Stream</option>
         <option value="In Progress">In Progress</option>
         <option value="Complete">Complete</option>
       </select><br><br>
@@ -185,7 +186,12 @@
               <td>
                 <button onclick="editRace('${race.race_id}')">Edit</button>
                 <button onclick="deleteRace('${race.race_id}')">Delete</button>
+                ${race.state === "Ready for Stream" ? `
+                  <button class="startStreamBtn" data-race-id="${race.race_id}">
+                    Start Stream
+                  </button>` : ""}
               </td>
+
             `;
             tbody.appendChild(row);
 
@@ -566,6 +572,35 @@
     socket.on('admin:racesUpdated', () => {
       loadRaces();
     });
+    document.addEventListener("click", (e) => {
+      if (e.target.classList.contains("startStreamBtn")) {
+        const raceId = e.target.dataset.raceId;
+        if (!confirm(`Start stream for race ${raceId}?`)) return;
+
+        fetch(`/api/start-stream/${raceId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+            // optionally add auth header here if required
+          }
+        })
+          .then((res) => res.json())
+          .then((result) => {
+            if (result.error) {
+              alert(`Error starting stream:\n${result.error}`);
+            } else {
+              alert(result.message || "Stream started!");
+              loadRaces();
+            }
+          })
+          .catch((err) => {
+            console.error(err);
+            alert("Error sending start stream request.");
+          });
+      }
+    });
+
+
   </script>
 </body>
 </html>
