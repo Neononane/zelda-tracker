@@ -5,10 +5,19 @@ const { OBSWebSocket } = require("obs-websocket-js");
 
 const router = express.Router();
 
+const sourceMap = {
+  player1: 'Player1',
+  player2: 'Player2',
+  player3: 'Player3',
+  player4: 'Player4',
+};
+
 router.get("/screenshot", async (req, res) => {
   const source = req.query.source;
 
-  if (!source) {
+  const obsSourceName = sourceMap[source?.toLowerCase()];
+
+  if (!obsSourceName) {
     return res.status(400).json({ error: "Missing ?source query parameter" });
   }
 
@@ -21,7 +30,7 @@ router.get("/screenshot", async (req, res) => {
     );
 
     const response = await obs.call("GetSourceScreenshot", {
-      sourceName: source,
+      sourceName: obsSourceName,
       imageFormat: "jpg",
       imageWidth: 640,
       imageHeight: 360
