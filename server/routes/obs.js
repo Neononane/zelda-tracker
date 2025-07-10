@@ -112,14 +112,26 @@ router.post("/set-crop", express.json(), async (req, res) => {
     const boundingBoxWidth = sceneItemTransform.boundsWidth;
     const boundingBoxHeight = sceneItemTransform.boundsHeight;
 
-    const scaleX = origWidth / boundingBoxWidth;
-    const scaleY = origHeight / boundingBoxHeight;
+    const screenshotWidth = 640;
+    const screenshotHeight = 360;
 
-    // Convert crop box from bounding box → source pixels
-    let trueCropX = crop.x * scaleX;
-    let trueCropY = crop.y * scaleY;
-    let trueCropWidth = crop.width * scaleX;
-    let trueCropHeight = crop.height * scaleY;
+    // Compute scaling from screenshot → bounds box
+    const scaleScreenshotX = boundsWidth / screenshotWidth;
+    const scaleScreenshotY = boundsHeight / screenshotHeight;
+
+    // Compute scaling from bounds box → original source
+    const scaleToSourceX = origWidth / boundsWidth;
+    const scaleToSourceY = origHeight / boundsHeight;
+
+    // Compose them into one factor
+    const totalScaleX = scaleScreenshotX * scaleToSourceX;
+    const totalScaleY = scaleScreenshotY * scaleToSourceY;
+
+    // Calculate true crop rectangle in source pixels
+    let trueCropX = crop.x * totalScaleX;
+    let trueCropY = crop.y * totalScaleY;
+    let trueCropWidth = crop.width * totalScaleX;
+    let trueCropHeight = crop.height * totalScaleY;
 
     // Clamp
     trueCropX = Math.max(0, Math.min(trueCropX, origWidth));
@@ -127,14 +139,11 @@ router.post("/set-crop", express.json(), async (req, res) => {
     trueCropWidth = Math.max(0, Math.min(trueCropWidth, origWidth - trueCropX));
     trueCropHeight = Math.max(0, Math.min(trueCropHeight, origHeight - trueCropY));
 
-    // Compute remaining edges
-    const remainingWidth = origWidth - (trueCropX + trueCropWidth);
-    const remainingHeight = origHeight - (trueCropY + trueCropHeight);
-
+    // Compute crop edges
     const cropLeft = Math.round(trueCropX);
     const cropTop = Math.round(trueCropY);
-    const cropRight = Math.round(remainingWidth);
-    const cropBottom = Math.round(remainingHeight);
+    const cropRight = Math.round(origWidth - (trueCropX + trueCropWidth));
+    const cropBottom = Math.round(origHeight - (trueCropY + trueCropHeight));
 
     console.log({
       origWidth,
