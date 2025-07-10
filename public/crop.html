@@ -80,7 +80,7 @@
 
     function loadScreenshot() {
       // Call backend to generate screenshot for this source
-      fetch(`/api/screenshot?source=${source}`)
+      fetch(`/api/obs/screenshot?source=${source}`)
         .then(res => res.json())
         .then(data => {
           console.log("Screenshot triggered:", data);
