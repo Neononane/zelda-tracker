@@ -79,7 +79,7 @@
 
   <script>
     function adjustVolume(playerNum, delta) {
-      fetch(`/api/restream/adjust-volume`, {
+      fetch(`/restream/adjust-volume`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -92,7 +92,7 @@
     }
 
     function switchAudio(player) {
-      fetch(`/api/restream/switch-audio`, {
+      fetch(`/restream/switch-audio`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ player })
@@ -102,7 +102,7 @@
     }
 
     function switchScene(scene) {
-      fetch(`/api/restream/switch-scene`, {
+      fetch(`/restream/switch-scene`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scene })
