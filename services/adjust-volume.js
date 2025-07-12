@@ -2,8 +2,8 @@ import OBSWebSocket from "obs-websocket-js";
 
 const obs = new OBSWebSocket();
 
-const obsAddress = "ws://127.0.0.1:4455";
-const obsPassword = ""; // e.g. "secret" if set
+const obsAddress = process.env.OBS_ADDRESS;
+const obsPassword = process.env.OBS_PASSWORD; // e.g. "secret" if set
 
 // default step when using "up" or "down"
 const defaultStepPct = 10; // = 10%
