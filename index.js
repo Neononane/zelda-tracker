@@ -5,7 +5,8 @@ const { Server } = require('socket.io');
 const sqlite3 = require('sqlite3').verbose();
 const crypto = require('crypto');
 const path = require('path');
-const obsRouter = require('./server/routes/obs')
+const obsRouter = require('./server/routes/obs');
+const obsPagesRouter = require('./server/routes/raceid');
 const startStreamRouter = require('./server/routes/startStream');
 
 const app = express();
@@ -17,6 +18,11 @@ app.use(express.json());
 app.use(express.static('public')); // to serve overlay page later
 app.use("/api/obs",obsRouter);
 app.use("/api", startStreamRouter);
+app.use("/restream",obsPagesRouter);
+
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+
 
 // SQLite DB
 console.log("Opening SQLite DB at:", path.resolve('./data/mydata.db'));

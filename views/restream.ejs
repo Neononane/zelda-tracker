@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Manage Restream</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2rem;
+      background: #111;
+      color: #eee;
+    }
+    button {
+      margin: 0.3rem;
+      padding: 0.5rem 1rem;
+      background: #333;
+      color: #eee;
+      border: 1px solid #666;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #555;
+    }
+    .player-section {
+      margin-bottom: 2rem;
+      padding: 1rem;
+      background: #222;
+      border-radius: 6px;
+    }
+    .scene-button {
+      display: inline-block;
+      margin: 0.5rem;
+      padding: 0.5rem;
+      background: #333;
+      color: #eee;
+      border: 1px solid #666;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .scene-button:hover {
+      background: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>Manage Restream: Race <%= raceId %></h1>
+
+  <% players.forEach((player, idx) => { %>
+    <div class="player-section">
+      <h2>Player <%= idx+1 %>: <%= player.display_name || player.backend_name %></h2>
+      
+      <a href="/crop.html?source=Player<%= idx+1 %>&twitch=<%= player.twitch_name %>">
+        <button>Crop Player <%= idx+1 %></button>
+      </a>
+
+      <h3>Adjust Volume:</h3>
+      <% [-100,-50,-25,-5,5,25,50,100].forEach(delta => { %>
+        <button onclick="adjustVolume('<%= idx+1 %>', <%= delta %>)">
+          <%= delta > 0 ? '+' : '' %><%= delta %>%
+        </button>
+      <% }); %>
+    </div>
+  <% }); %>
+
+  <h2>Switch Audio:</h2>
+  <% players.forEach((player, idx) => { %>
+    <button onclick="switchAudio('Player<%= idx+1 %>')">
+      Switch to <%= player.display_name || player.backend_name %>
+    </button>
+  <% }); %>
+
+  <h2>Change Scene:</h2>
+  <% scenes.forEach(scene => { %>
+    <div class="scene-button" onclick="switchScene('<%= scene %>')">
+      <%= scene %>
+    </div>
+  <% }); %>
+
+  <script>
+    function adjustVolume(playerNum, delta) {
+      fetch(`/api/obs/adjust-volume`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player: `Player${playerNum}`,
+          delta
+        })
+      }).then(() => {
+        alert(`Adjusted Player${playerNum} volume by ${delta}%`);
+      });
+    }
+
+    function switchAudio(player) {
+      fetch(`/api/obs/switch-audio`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player })
+      }).then(() => {
+        alert(`Switched audio to ${player}`);
+      });
+    }
+
+    function switchScene(scene) {
+      fetch(`/api/obs/switch-scene`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scene })
+      }).then(() => {
+        alert(`Switched to scene: ${scene}`);
+      });
+    }
+  </script>
+</body>
+</html>

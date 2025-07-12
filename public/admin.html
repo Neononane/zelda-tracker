@@ -190,6 +190,10 @@
                   <button class="startStreamBtn" data-race-id="${race.race_id}">
                     Start Stream
                   </button>` : ""}
+                ${race.state === 'In Progress'
+                  ? `<button onclick="manageRestream('${race.race_id}')">Manage Restream</button>`
+                  : ''
+                }  
               </td>
 
             `;
@@ -235,6 +239,11 @@
         loadRaces();
       });
     }
+
+    function manageRestream(raceId) {
+      window.location.href = `/restream/${raceId}`;
+    }
+
 
     function editRace(raceId) {
       fetch(`/api/races`)
