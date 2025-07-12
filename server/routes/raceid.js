@@ -5,12 +5,13 @@ const OBSWebSocket = require("obs-websocket-js").default;
 const obs = new OBSWebSocket();
 const sqlite3 = require("sqlite3").verbose();
 
-const trackerDb = new sqlite3.Database("./data/tracker.db");
-const playersDb = new sqlite3.Database("./data/players.db")
+
 
 
 obsRouter.get("/:raceId", async (req, res) => {
   const raceId = req.params.raceId;
+  const trackerDb = new sqlite3.Database("./data/tracker.db");
+    const playersDb = new sqlite3.Database("./data/players.db")
 
   trackerDb.all(
     `SELECT backend_name, display_name FROM players WHERE race_id = ?`,
