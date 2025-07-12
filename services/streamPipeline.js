@@ -61,7 +61,7 @@ async function runStreamPipeline(player1, player2) {
 
   console.log("🚀 Switching scene...");
   await execAsync(`node ./services/switch-scene.js Scene`);
-  await sleep(5 * 1000);
+  await sleep(15 * 1000);
 
   console.log("🚀 Switching audio...");
   await execAsync(`node ./services/switch-audio.js Player1`);
@@ -72,7 +72,7 @@ async function runStreamPipeline(player1, player2) {
   await sleep(5 * 1000);
 
   console.log("🚀 Starting OBS stream...");
-  await execAsync(`node ./services/start-obs.js`);
+  execAsync(`node ./services/start-obs.js`);
   console.log("✅ Stream pipeline complete!");
 }
 
