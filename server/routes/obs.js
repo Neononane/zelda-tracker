@@ -69,7 +69,8 @@ router.post("/set-crop", express.json(), async (req, res) => {
   if (!source || !crop) {
     return res.status(400).json({ error: "Missing source or crop data" });
   }
-
+  const obsSourceName = sourceMap[source.toLowerCase()] || source;
+  const targetScene = "Scene";
   const obs = new OBSWebSocket();
 
   try {
@@ -78,17 +79,10 @@ router.post("/set-crop", express.json(), async (req, res) => {
       process.env.OBS_PASSWORD || undefined
     );
 
-    const { currentProgramSceneName } = await obs.call(
-      "GetCurrentProgramScene"
-    );
+    const { sceneItems } = await obs.call("GetSceneItemList", { sceneName: targetScene });
 
-    const { sceneItems } = await obs.call("GetSceneItemList", {
-      sceneName: currentProgramSceneName
-    });
 
-    const item = sceneItems.find(
-      (i) => i.sourceName === source
-    );
+    const item = sceneItems.find(i => i.sourceName === obsSourceName);
 
     if (!item) {
       return res
@@ -177,20 +171,15 @@ router.post("/set-crop", express.json(), async (req, res) => {
 
 
     await obs.call("SetSceneItemTransform", {
-      sceneName: currentProgramSceneName,
-      sceneItemId,
-      sceneItemTransform: {
-        cropTop,
-        cropBottom,
-        cropLeft,
-        cropRight
-      }
+      sceneName: targetScene,
+      sceneItemId: item.sceneItemId,
+      sceneItemTransform: { cropTop, cropBottom, cropLeft, cropRight }
     });
 
-    console.log(`Crop applied for ${source}`);
+    console.log(`Crop applied for ${obsSourceName}`);
     return res.json({ success: true });
   } catch (err) {
-    console.error(err);
+    console.error("Crop error:", err);
     return res.status(500).json({ error: err.message });
   } finally {
     obs.disconnect();
