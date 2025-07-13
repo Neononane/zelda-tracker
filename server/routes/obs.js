@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const fs = require("fs").promises;
 const path = require("path");
@@ -78,6 +79,7 @@ router.post("/set-crop", express.json(), async (req, res) => {
       process.env.OBS_ADDRESS,
       process.env.OBS_PASSWORD || undefined
     );
+    console.log("I connected to the OBS websocket for cropping")
 
     const { sceneItems } = await obs.call("GetSceneItemList", { sceneName: targetScene });
 
