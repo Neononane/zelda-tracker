@@ -146,12 +146,6 @@ router.post("/set-crop", express.json(), async (req, res) => {
     const cropRight = Math.round(origWidth - (trueCropX + trueCropWidth));
     const cropBottom = Math.round(origHeight - (trueCropY + trueCropHeight));
 
-    const pixelOffsetX = cropLeft * scaleX;
-    const pixelOffsetY = cropTop * scaleY;
-
-    const newPositionX = positionX - pixelOffsetX;
-    const newPositionY = positionY - pixelOffsetY;
-
 
     console.log({
       origWidth,
@@ -192,7 +186,7 @@ router.post("/set-crop", express.json(), async (req, res) => {
     await obs.call("SetSceneItemTransform", {
       sceneName: targetScene,
       sceneItemId: item.sceneItemId,
-      sceneItemTransform: { cropTop, cropBottom, cropLeft, cropRight, positionX: newPositionX, positionY: newPositionY }
+      sceneItemTransform: { cropTop, cropBottom, cropLeft, cropRight}
     });
     await obs.call("SetSceneItemEnabled", {
       sceneName: targetScene,
@@ -212,7 +206,8 @@ router.post("/set-crop", express.json(), async (req, res) => {
       sceneItemId: item.sceneItemId,
     });
     console.log("Transform after set:", result);
-
+    await obs.call("TriggerStudioModeTransition");
+    console.log("trigger studio switch");
 
     console.log(`Crop applied for ${obsSourceName}`);
     return res.json({ success: true });
