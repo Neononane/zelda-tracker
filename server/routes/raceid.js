@@ -122,5 +122,66 @@ obsRouter.post("/switch-scene", (req, res) => {
   child.on("close", () => res.json({ success: true }));
 });
 
+obsRouter.get("/api/:raceId", async (req, res) => {
+  const raceId = req.params.raceId;
+  const trackerDb = new sqlite3.Database("./data/tracker.db");
+  const playersDb = new sqlite3.Database("./data/players.db");
+
+  trackerDb.all(
+    `SELECT backend_name, display_name FROM players WHERE race_id = ?`,
+    [raceId],
+    async (err, trackerRows) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Database error fetching race players." });
+      }
+
+      if (!trackerRows || trackerRows.length === 0) {
+        trackerDb.close();
+        playersDb.close();
+        return res.json({ players: [] });
+      }
+
+      const enrichedPlayers = [];
+
+      for (const row of trackerRows) {
+        const backendName = row.backend_name;
+        const displayName = row.display_name || backendName;
+
+        await new Promise((resolve) => {
+          playersDb.get(
+            `SELECT twitch_name FROM library_players WHERE internal_name = ?`,
+            [backendName],
+            (err, libRow) => {
+              if (err) {
+                console.error(err);
+                enrichedPlayers.push({
+                  backend_name: backendName,
+                  display_name: displayName,
+                  twitch_name: null,
+                  obs_source_name: backendName, // fallback
+                });
+                return resolve();
+              }
+
+              enrichedPlayers.push({
+                backend_name: backendName,
+                display_name: displayName,
+                twitch_name: libRow ? libRow.twitch_name : null,
+                obs_source_name: backendName, // adjust if you want Player1, Player2 etc
+              });
+              resolve();
+            }
+          );
+        });
+      }
+
+      playersDb.close();
+      trackerDb.close();
+
+      res.json({ players: enrichedPlayers });
+    }
+  );
+});
 
 module.exports = obsRouter;
