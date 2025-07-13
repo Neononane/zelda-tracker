@@ -92,24 +92,26 @@
         .then(res => res.json())
         .then(data => {
           const playerData = data.players.find(
-            (p) => p.backend_name === playerKey
+            p => p.backend_name === playerInternalName
           );
 
-
           if (!playerData) {
-            alert(`Player ${playerKey} not found for this race.`);
+            alert(`Player ${playerInternalName} not found for this race.`);
             return;
           }
 
-          document.getElementById("player-info").textContent = `Editing crop for: ${playerData.display_name}`;
-          obsSourceName = playerData.obs_source_name;
+          document.getElementById("player-info").textContent =
+            `Editing crop for: ${playerData.display_name} (${playerKey})`;
 
+          obsSourceName = playerKey;
+          sourceForScreenshot = playerKey;
         })
         .catch(err => {
           console.error(err);
           alert("Failed to load player data.");
         });
     }
+
 
     function loadScreenshot() {
       fetch(`/api/obs/screenshot?source=${encodeURIComponent(sourceForScreenshot)}&raceId=${encodeURIComponent(raceId)}`)
