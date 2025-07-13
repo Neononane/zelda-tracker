@@ -84,7 +84,10 @@
       fetch(`/restream/api/${raceId}`)
         .then(res => res.json())
         .then(data => {
-          const playerData = data.players.find(p => p.playerKey === playerKey);
+          const playerData = data.players.find(
+            (p) => p.backend_name === playerKey
+          );
+
 
           if (!playerData) {
             alert(`Player ${playerKey} not found for this race.`);
