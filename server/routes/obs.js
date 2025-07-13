@@ -185,7 +185,10 @@ router.post("/set-crop", express.json(), async (req, res) => {
     await obs.call("SetSceneItemTransform", {
       sceneName: targetScene,
       sceneItemId: item.sceneItemId,
-      sceneItemTransform: { cropTop, cropBottom, cropLeft, cropRight }
+      cropTop: cropTop, 
+      cropBottom: cropBottom, 
+      cropLeft: cropLeft, 
+      cropRight: cropRight
     });
 
     console.log(`Crop applied for ${obsSourceName}`);
