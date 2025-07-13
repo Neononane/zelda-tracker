@@ -133,6 +133,8 @@ obsRouter.get("/api/:raceId", async (req, res) => {
     async (err, trackerRows) => {
       if (err) {
         console.error(err);
+        trackerDb.close();
+        playersDb.close();
         return res.status(500).json({ error: "Database error fetching race players." });
       }
 
@@ -159,7 +161,7 @@ obsRouter.get("/api/:raceId", async (req, res) => {
                   backend_name: backendName,
                   display_name: displayName,
                   twitch_name: null,
-                  obs_source_name: backendName, // fallback
+                  obs_source_name: backendName,
                 });
                 return resolve();
               }
@@ -168,7 +170,7 @@ obsRouter.get("/api/:raceId", async (req, res) => {
                 backend_name: backendName,
                 display_name: displayName,
                 twitch_name: libRow ? libRow.twitch_name : null,
-                obs_source_name: backendName, // adjust if you want Player1, Player2 etc
+                obs_source_name: backendName,
               });
               resolve();
             }
@@ -176,8 +178,8 @@ obsRouter.get("/api/:raceId", async (req, res) => {
         });
       }
 
-      playersDb.close();
       trackerDb.close();
+      playersDb.close();
 
       res.json({ players: enrichedPlayers });
     }
