@@ -48,9 +48,9 @@
 
   <% players.forEach((player, idx) => { %>
     <div class="player-section">
-      <h2>Player <%= idx+1 %>: <%= player.display_name || player.backend_name %></h2>
+      <h2><%= player.backend_name %>: <%= player.display_name || player.backend_name %></h2>
       
-      <a href="/crop.html?raceId=<%= raceId %>&playerKey=<%= player.playerKey %>" target="_blank">
+    <a href="/crop.html?raceId=<%= raceId %>&playerKey=<%= player.backend_name %>" target="_blank">
       <button>Crop <%= player.display_name || player.backend_name %></button>
     </a>
 
