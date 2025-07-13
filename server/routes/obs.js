@@ -179,6 +179,9 @@ router.post("/set-crop", express.json(), async (req, res) => {
       sceneItemId: item.sceneItemId,
       sceneName: targetScene
     });
+    const version = await obs.call("GetVersion");
+    console.log("OBS WebSocket version:", version);
+
     await obs.call("SetSceneItemTransform", {
       sceneName: targetScene,
       sceneItemId: item.sceneItemId,
