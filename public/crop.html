@@ -65,7 +65,7 @@
     window.addEventListener("DOMContentLoaded", () => {
       const params = new URLSearchParams(window.location.search);
       raceId = params.get("raceId");
-      playerKey = params.get("player");
+      playerKey = params.get("playerKey");
 
       if (!raceId || !playerKey) {
         alert("Missing raceId or player parameter.");
