@@ -71,7 +71,6 @@ router.post("/set-crop", express.json(), async (req, res) => {
     return res.status(400).json({ error: "Missing source or crop data" });
   }
   const obsSourceName = sourceMap[source.toLowerCase()] || source;
-  const targetScene = "Scene";
   const obs = new OBSWebSocket();
 
   try {
@@ -80,7 +79,7 @@ router.post("/set-crop", express.json(), async (req, res) => {
       process.env.OBS_PASSWORD || undefined
     );
     console.log("I connected to the OBS websocket for cropping")
-
+    const targetScene = await obs.call("GetCurrentProgramScene");
     const { sceneItems } = await obs.call("GetSceneItemList", { sceneName: targetScene });
 
 
@@ -206,8 +205,6 @@ router.post("/set-crop", express.json(), async (req, res) => {
       sceneItemId: item.sceneItemId,
     });
     console.log("Transform after set:", result);
-    await obs.call("TriggerStudioModeTransition");
-    console.log("trigger studio switch");
 
     console.log(`Crop applied for ${obsSourceName}`);
     return res.json({ success: true });
