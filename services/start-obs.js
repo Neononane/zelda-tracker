@@ -38,6 +38,10 @@ await obs.call("SetVideoSettings", {
         use_auth: false
       }
     });
+    await obs.call("SetStudioModeEnabled", {
+      studioModeEnabled: false
+    });
+
 
     console.log("Stream settings updated!");
 
