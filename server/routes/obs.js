@@ -146,6 +146,13 @@ router.post("/set-crop", express.json(), async (req, res) => {
     const cropRight = Math.round(origWidth - (trueCropX + trueCropWidth));
     const cropBottom = Math.round(origHeight - (trueCropY + trueCropHeight));
 
+    const pixelOffsetX = cropLeft * scaleX;
+    const pixelOffsetY = cropTop * scaleY;
+
+    const newPositionX = positionX - pixelOffsetX;
+    const newPositionY = positionY - pixelOffsetY;
+
+
     console.log({
       origWidth,
       origHeight,
@@ -185,7 +192,7 @@ router.post("/set-crop", express.json(), async (req, res) => {
     await obs.call("SetSceneItemTransform", {
       sceneName: targetScene,
       sceneItemId: item.sceneItemId,
-      sceneItemTransform: { cropTop, cropBottom, cropLeft, cropRight }
+      sceneItemTransform: { cropTop, cropBottom, cropLeft, cropRight, positionX: newPositionX, positionY: newPositionY }
     });
     await obs.call("SetSceneItemEnabled", {
       sceneName: targetScene,
