@@ -203,7 +203,7 @@ router.post("/set-crop", express.json(), async (req, res) => {
     console.log('This is the target scene:', targetScene);
     console.log('This is the scene item:', item);
     const result = await obs.call("GetSceneItemTransform", {
-      sceneName: "Scene",
+      sceneName: targetScene,
       sceneItemId: item.sceneItemId,
     });
     console.log("Transform after set:", result);
