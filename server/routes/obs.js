@@ -2,6 +2,7 @@ const express = require("express");
 const fs = require("fs").promises;
 const path = require("path");
 const { OBSWebSocket } = require("obs-websocket-js");
+const { getMapping } = require("../lib/obsMappings");
 
 const router = express.Router();
 
@@ -13,12 +14,18 @@ const sourceMap = {
 };
 
 router.get("/screenshot", async (req, res) => {
-  const source = req.query.source;
+  const { source, raceId } = req.query;
 
-  const obsSourceName = sourceMap[source?.toLowerCase()];
+  if (!source || !raceId) {
+    return res.status(400).json({ error: "Missing source or raceId parameter." });
+  }
+
+  const dynamicMap = getMapping(raceId);
+
+  const obsSourceName = dynamicMap[source];
 
   if (!obsSourceName) {
-    return res.status(400).json({ error: "Missing ?source query parameter" });
+    return res.status(400).json({ error: `Source ${source} not mapped for race ${raceId}` });
   }
 
   const obs = new OBSWebSocket();
