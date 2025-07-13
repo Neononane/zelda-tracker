@@ -196,7 +196,7 @@ router.post("/set-crop", express.json(), async (req, res) => {
     });
 
     await obs.call("SetSceneItemEnabled", {
-      sceneName: 'Scene',
+      sceneName: targetScene,
       sceneItemId: item.sceneItemId,
       sceneItemEnabled: true
     });
