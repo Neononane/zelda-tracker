@@ -187,6 +187,19 @@ router.post("/set-crop", express.json(), async (req, res) => {
       sceneItemId: item.sceneItemId,
       sceneItemTransform: { cropTop, cropBottom, cropLeft, cropRight }
     });
+    await obs.call("SetSceneItemEnabled", {
+      sceneName: targetScene,
+      sceneItemId: item.sceneItemId,
+      sceneItemEnabled: false
+    });
+
+    await obs.call("SetSceneItemEnabled", {
+      sceneName: 'Scene',
+      sceneItemId: item.sceneItemId,
+      sceneItemEnabled: true
+    });
+    console.log('This is the target scene:', targetScene);
+    console.log('This is the scene item:', item);
     const result = await obs.call("GetSceneItemTransform", {
       sceneName: "Scene",
       sceneItemId: item.sceneItemId,
