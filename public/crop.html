@@ -19,6 +19,7 @@
     #cropped-preview {
       margin-top: 10px;
       border: 2px solid #f00;
+      max-width: 100%;
     }
     button {
       margin: 5px;
@@ -35,7 +36,7 @@
 </head>
 <body>
   <h1>Crop Tool</h1>
-  <p id="source-info"></p>
+  <p id="player-info"></p>
 
   <div id="image-container">
     <img id="screenshot" style="max-width: 100%; display: none;" />
@@ -57,41 +58,62 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
   <script>
     let cropper;
-    let source;
+    let raceId;
+    let playerKey;
+    let obsSourceName;
 
     window.addEventListener("DOMContentLoaded", () => {
-      // Get source from query param
       const params = new URLSearchParams(window.location.search);
-      source = params.get("source");
+      raceId = params.get("raceId");
+      playerKey = params.get("player");
 
-      if (!source || !["player1", "player2"].includes(source)) {
-        alert("Invalid source specified.");
+      if (!raceId || !playerKey) {
+        alert("Missing raceId or player parameter.");
         return;
       }
 
-      document.getElementById("source-info").textContent = `Editing crop for: ${source}`;
+      loadPlayerDetails();
 
-      // Wire buttons
       document.getElementById("new-screenshot").addEventListener("click", loadScreenshot);
       document.getElementById("crop-button").addEventListener("click", cropImage);
       document.getElementById("accept-crop").addEventListener("click", acceptCrop);
       document.getElementById("retry-crop").addEventListener("click", resetCropUI);
     });
 
+    function loadPlayerDetails() {
+      fetch(`/api/restream/${raceId}`)
+        .then(res => res.json())
+        .then(data => {
+          const playerData = data.players.find(p => p.playerKey === playerKey);
+
+          if (!playerData) {
+            alert(`Player ${playerKey} not found for this race.`);
+            return;
+          }
+
+          document.getElementById("player-info").textContent = `Editing crop for: ${playerData.display_name}`;
+          obsSourceName = playerData.obs_source_name;
+
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Failed to load player data.");
+        });
+    }
+
     function loadScreenshot() {
-      // Call backend to generate screenshot for this source
-      fetch(`/api/obs/screenshot?source=${source}`)
+      fetch(`/api/obs/screenshot?source=${encodeURIComponent(obsSourceName)}`)
         .then(res => res.json())
         .then(data => {
           console.log("Screenshot triggered:", data);
           const img = document.getElementById("screenshot");
-          img.src = `/screenshots/${source}.jpg?cacheBust=` + new Date().getTime();
+          img.src = `/screenshots/${obsSourceName}.jpg?cacheBust=` + new Date().getTime();
           img.style.display = "block";
 
-          // Destroy previous cropper if exists
           if (cropper) {
             cropper.destroy();
           }
+
           cropper = new Cropper(img, {
             viewMode: 1,
             autoCrop: true,
@@ -109,7 +131,6 @@
       document.getElementById("cropped-preview").src = croppedDataURL;
       document.getElementById("cropped-container").style.display = "block";
 
-      // Hide original
       document.getElementById("screenshot").style.display = "none";
       document.getElementById("crop-button").style.display = "none";
     }
@@ -118,16 +139,6 @@
       const cropData = cropper.getData(true);
       console.log("Crop Data:", cropData);
 
-      const sourceMap = {
-        player1: 'Player1',
-        player2: 'Player2',
-        player3: 'Player3',
-        player4: 'Player4',
-      };
-
-      const obsSourceName = sourceMap[source?.toLowerCase()];
-
-      // Send to backend to update OBS
       fetch("/api/obs/set-crop", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -140,12 +151,17 @@
             height: Math.round(cropData.height)
           }
         })
-      }).then(res => res.json())
-        .then(data => {
-          alert("Crop applied!");
-          console.log("OBS crop set:", data);
-          resetCropUI();
-        });
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert("Crop applied!");
+        console.log("OBS crop set:", data);
+        resetCropUI();
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Crop failed.");
+      });
     }
 
     function resetCropUI() {

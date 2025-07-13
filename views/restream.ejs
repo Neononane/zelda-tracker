@@ -50,13 +50,14 @@
     <div class="player-section">
       <h2>Player <%= idx+1 %>: <%= player.display_name || player.backend_name %></h2>
       
-      <a href="/crop.html?source=Player<%= idx+1 %>&twitch=<%= player.twitch_name %>">
-        <button>Crop Player <%= idx+1 %></button>
-      </a>
+      <a href="/crop.html?raceId=<%= raceId %>&playerKey=<%= player.playerKey %>" target="_blank">
+      <button>Crop <%= player.display_name || player.backend_name %></button>
+    </a>
+
 
       <h3>Adjust Volume:</h3>
       <% [-100,-50,-25,-5,5,25,50,100].forEach(delta => { %>
-        <button onclick="adjustVolume('<%= idx+1 %>', <%= delta %>)">
+        <button onclick="adjustVolume('<%= player.obs_source_name %>', <%= delta %>)">
           <%= delta > 0 ? '+' : '' %><%= delta %>%
         </button>
       <% }); %>
@@ -65,7 +66,7 @@
 
   <h2>Switch Audio:</h2>
   <% players.forEach((player, idx) => { %>
-    <button onclick="switchAudio('Player<%= idx+1 %>')">
+    <button onclick="switchAudio('<%= player.obs_source_name %>')">
       Switch to <%= player.display_name || player.backend_name %>
     </button>
   <% }); %>
@@ -78,26 +79,26 @@
   <% }); %>
 
   <script>
-    function adjustVolume(playerNum, delta) {
+    function adjustVolume(obsSourceName, delta) {
       fetch(`/restream/adjust-volume`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          player: `Player${playerNum}`,
+          player: obsSourceName,
           delta
         })
       }).then(() => {
-        alert(`Adjusted Player${playerNum} volume by ${delta}%`);
+        alert(`Adjusted ${obsSourceName} volume by ${delta}%`);
       });
     }
 
-    function switchAudio(player) {
+    function switchAudio(obsSourceName) {
       fetch(`/restream/switch-audio`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ player })
+        body: JSON.stringify({ player: obsSourceName })
       }).then(() => {
-        alert(`Switched audio to ${player}`);
+        alert(`Switched audio to ${obsSourceName}`);
       });
     }
 
@@ -112,4 +113,5 @@
     }
   </script>
 </body>
+
 </html>
