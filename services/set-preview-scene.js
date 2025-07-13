@@ -1,4 +1,4 @@
-const OBSWebSocket = require("obs-websocket-js");
+const OBSWebSocket = require("obs-websocket-js").default;
 const obs = new OBSWebSocket();
 
 async function main() {
