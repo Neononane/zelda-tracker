@@ -81,7 +81,7 @@
     });
 
     function loadPlayerDetails() {
-      fetch(`/api/restream/${raceId}`)
+      fetch(`/restream/${raceId}`)
         .then(res => res.json())
         .then(data => {
           const playerData = data.players.find(p => p.playerKey === playerKey);
