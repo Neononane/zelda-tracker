@@ -26,6 +26,11 @@ await obs.call("SetVideoSettings", {
   fpsNumerator: 30,
   fpsDenominator: 1
 });
+
+  await obs.call("SetStudioModeEnabled", { studioModeEnabled: true });
+  await obs.call("SetCurrentPreviewScene", {
+    sceneName: "Scene",
+  });
 	
 
     // Update stream settings

@@ -3,8 +3,8 @@ import OBSWebSocket from "obs-websocket-js";
 const obs = new OBSWebSocket();
 
 // Change these if needed:
-const obsAddress = "ws://127.0.0.1:4455";
-const obsPassword = ""; // e.g. "secret" if set
+const obsAddress = process.env.OBS_ADDRESS;
+const obsPassword = process.env.OBS_PASSWORD; // e.g. "secret" if set
 
 /**
  * Switches OBS to the given scene
