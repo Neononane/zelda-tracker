@@ -59,6 +59,11 @@ async function runStreamPipeline(player1, player2) {
   launchOBS();
   await sleep(10 * 1000);
 
+  console.log("🚀 Setting preview scene to Scene...");
+  await execAsync(`node ./services/set-preview-scene.js Scene`);
+  await sleep(5 * 1000);
+
+
   console.log("🚀 Switching scene...");
   await execAsync(`node ./services/switch-scene.js Scene`);
   await sleep(15 * 1000);
