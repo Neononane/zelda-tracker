@@ -79,7 +79,8 @@ router.post("/set-crop", express.json(), async (req, res) => {
       process.env.OBS_PASSWORD || undefined
     );
     console.log("I connected to the OBS websocket for cropping")
-    const targetScene = await obs.call("GetCurrentProgramScene");
+    const currentProgramScene = await obs.call("GetCurrentProgramScene");
+    const targetScene = currentProgramScene.sceneName;
     console.log("value of targetScene:",targetScene);
     const { sceneItems } = await obs.call("GetSceneItemList", { sceneName: targetScene });
 
