@@ -50,9 +50,14 @@
     <div class="player-section">
       <h2><%= player.backend_name %>: <%= player.display_name || player.backend_name %></h2>
       
-    <a href="/crop.html?raceId=<%= raceId %>&playerKey=<%= player.backend_name %>" target="_blank">
-      <button>Crop <%= player.display_name || player.backend_name %></button>
+    <a 
+      href="/crop.html?raceId=<%= raceId %>&playerKey=Player<%= idx+1 %>&playerInternalName=<%= encodeURIComponent(player.backend_name) %>"
+      target="_blank">
+      <button>
+        Crop <%= player.display_name || player.backend_name %>
+      </button>
     </a>
+
 
 
       <h3>Adjust Volume:</h3>

@@ -20,9 +20,7 @@ router.get("/screenshot", async (req, res) => {
     return res.status(400).json({ error: "Missing source or raceId parameter." });
   }
 
-  const dynamicMap = getMapping(raceId);
-
-  const obsSourceName = dynamicMap[source];
+  const obsSourceName = sourceMap[source?.toLowerCase()];
 
   if (!obsSourceName) {
     return res.status(400).json({ error: `Source ${source} not mapped for race ${raceId}` });
