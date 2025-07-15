@@ -117,7 +117,7 @@ app.post('/api/races', (req, res) => {
 
   db.run(
     `INSERT INTO races (race_id, name, api_key, state) VALUES (?, ?, ?, ?)`,
-    [raceId, name, apiKey, 'In Progress'],
+    [raceId, name, apiKey, 'Ready for Stream'],
     function (err) {
       if (err) {
         console.error(err);
