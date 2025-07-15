@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require("express");
 const fs = require("fs").promises;
 const path = require("path");
-const { OBSWebSocket } = require("obs-websocket-js").default;
+const OBSWebSocket = require("obs-websocket-js").default;
 const obs = new OBSWebSocket();
 const { getMapping } = require("../lib/obsMappings");
 
