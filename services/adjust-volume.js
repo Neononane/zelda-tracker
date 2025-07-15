@@ -14,9 +14,20 @@ async function adjustVolume(sourceName, deltaPct) {
       inputName: sourceName
     });
 
-    let newVolume = inputVolumeMul * (1 + deltaPct / 100);
+    let newVolume = inputVolumeMul;
 
-    // Clamp between 0.0 and 10.0
+    if (inputVolumeMul === 0 && deltaPct > 0) {
+      // special case - revive volume from silence
+      newVolume = 0.05; // e.g. 5%
+      console.log(
+        `🔊 Volume was zero. Bumping ${sourceName} to minimum audible level.`
+      );
+    } else {
+      const multiplier = 1 + deltaPct / 100;
+      newVolume = inputVolumeMul * multiplier;
+    }
+
+    // clamp
     if (newVolume > 10.0) newVolume = 10.0;
     if (newVolume < 0) newVolume = 0;
 
@@ -34,6 +45,7 @@ async function adjustVolume(sourceName, deltaPct) {
     console.error(e);
   }
 }
+
 
 const args = process.argv.slice(2);
 

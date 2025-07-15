@@ -50,15 +50,13 @@
     <div class="player-section">
       <h2><%= player.backend_name %>: <%= player.display_name || player.backend_name %></h2>
       
-    <a 
-      href="/crop.html?raceId=<%= raceId %>&playerKey=Player<%= idx+1 %>&playerInternalName=<%= encodeURIComponent(player.backend_name) %>"
-      target="_blank">
-      <button>
-        Crop <%= player.display_name || player.backend_name %>
-      </button>
-    </a>
-
-
+      <a 
+        href="/crop.html?raceId=<%= raceId %>&playerKey=Player<%= idx+1 %>&playerInternalName=<%= encodeURIComponent(player.backend_name) %>"
+        target="_blank">
+        <button>
+          Crop <%= player.display_name || player.backend_name %>
+        </button>
+      </a>
 
       <h3>Adjust Volume:</h3>
       <% [-100,-50,-25,-5,5,25,50,100].forEach(delta => { %>
@@ -67,17 +65,18 @@
         </button>
       <% }); %>
     </div>
-    <div class="player-section">
-  <h2>Discord Audio</h2>
-  <h3>Adjust Volume:</h3>
-  <% [-100,-50,-25,-5,5,25,50,100].forEach(delta => { %>
-    <button onclick="adjustVolume('Discord', <%= delta %>)">
-      <%= delta > 0 ? '+' : '' %><%= delta %>%
-    </button>
   <% }); %>
-</div>
 
-  <% }); %>
+  <!-- 🟢 Moved outside the player loop -->
+  <div class="player-section">
+    <h2>Discord Audio</h2>
+    <h3>Adjust Volume:</h3>
+    <% [-100,-50,-25,-5,5,25,50,100].forEach(delta => { %>
+      <button onclick="adjustVolume('Discord', <%= delta %>)">
+        <%= delta > 0 ? '+' : '' %><%= delta %>%
+      </button>
+    <% }); %>
+  </div>
 
   <h2>Switch Audio:</h2>
   <% players.forEach((player, idx) => { %>
@@ -128,5 +127,6 @@
     }
   </script>
 </body>
+
 
 </html>
