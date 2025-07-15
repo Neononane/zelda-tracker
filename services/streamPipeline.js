@@ -3,7 +3,7 @@ const util = require("util");
 const execAsync = util.promisify(require("child_process").exec);
 const { startDiscord, stopDiscord } = require("./discord-control.js");
 
-const OBSWebSocket = require("obs-websocket-js");
+const OBSWebSocket = require("obs-websocket-js").default;
 
 async function setOBSVideoSettings() {
   const obs = new OBSWebSocket();
