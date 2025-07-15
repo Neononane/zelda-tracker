@@ -12,10 +12,19 @@ async function switchAudio(selectedPlayerName) {
     const { inputs } = await obs.call("GetInputList");
 
     for (const input of inputs) {
+      // Only attempt to mute audio-capable sources
+      if (!(
+        input.inputKind.includes("ffmpeg_source") ||
+        input.inputKind.includes("media_source") ||
+        input.inputKind.includes("browser_source")
+      )) {
+        continue;
+      }
+
       let shouldMute = true;
 
       if (input.inputName === "Discord") {
-        shouldMute = false; // Discord stays unmuted always
+        shouldMute = false; // always keep Discord on
       } else if (input.inputName === selectedPlayerName) {
         shouldMute = false;
       }
