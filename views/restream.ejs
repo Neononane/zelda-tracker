@@ -49,6 +49,7 @@
     <button id="startStreamBtn" style="padding: 0.8em 1.5em; font-weight: bold;">
       Start Stream
     </button>
+    <button id="goLiveBtn" style="display:inline-block;">Go Live</button>
   </div>
 
 
@@ -185,6 +186,50 @@
           alert("Error starting stream.");
         });
     });
+    document.getElementById('goLiveBtn').addEventListener('click', () => {
+      fetch('/api/obs/go-live', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to trigger transition');
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          showToast('Studio transition triggered!');
+          document.getElementById('goLiveBtn').style.display = 'none';
+        } else {
+          showToast('Failed to trigger transition.');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        showToast('Error triggering transition.');
+      });
+    });
+
+    // Simple toast function
+    function showToast(message) {
+      let toast = document.createElement('div');
+      toast.textContent = message;
+      toast.style.position = 'fixed';
+      toast.style.bottom = '20px';
+      toast.style.left = '50%';
+      toast.style.transform = 'translateX(-50%)';
+      toast.style.backgroundColor = '#333';
+      toast.style.color = '#fff';
+      toast.style.padding = '10px 20px';
+      toast.style.borderRadius = '5px';
+      toast.style.zIndex = 9999;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        document.body.removeChild(toast);
+      }, 3000);
+    }
+
     <% if (raceState === "In Progress") { %>
       document.addEventListener("DOMContentLoaded", () => {
         const btn = document.getElementById("startStreamBtn");

@@ -48,10 +48,6 @@ async function connectOBSAndAddStream(twitchChannel) {
       }
     });
 
-    await obs.call("SetStudioModeEnabled", {
-      studioModeEnabled: false
-    });
-
     console.log("Stream settings updated!");
 
     // Start streaming

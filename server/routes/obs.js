@@ -2,7 +2,8 @@ require('dotenv').config();
 const express = require("express");
 const fs = require("fs").promises;
 const path = require("path");
-const { OBSWebSocket } = require("obs-websocket-js");
+const { OBSWebSocket } = require("obs-websocket-js").default;
+const obs = new OBSWebSocket();
 const { getMapping } = require("../lib/obsMappings");
 
 const router = express.Router();
@@ -79,8 +80,9 @@ router.post("/set-crop", express.json(), async (req, res) => {
       process.env.OBS_PASSWORD || undefined
     );
     console.log("I connected to the OBS websocket for cropping")
-    const currentProgramScene = await obs.call("GetCurrentProgramScene");
-    const targetScene = currentProgramScene.sceneName;
+    //const currentProgramScene = await obs.call("GetCurrentProgramScene");
+    //const targetScene = currentProgramScene.sceneName;
+    const targetScene = "Scene";
     console.log("value of targetScene:",targetScene);
     const { sceneItems } = await obs.call("GetSceneItemList", { sceneName: targetScene });
 
@@ -215,6 +217,20 @@ router.post("/set-crop", express.json(), async (req, res) => {
     return res.status(500).json({ error: err.message });
   } finally {
     obs.disconnect();
+  }
+});
+
+router.post('/go-live', async (req, res) => {
+  try {
+    await obs.connect(process.env.OBS_ADDRESS, process.env.OBS_PASSWORD);
+    
+    await obs.call('TriggerStudioModeTransition');
+
+    await obs.disconnect();
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error triggering Studio Mode transition:', err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
