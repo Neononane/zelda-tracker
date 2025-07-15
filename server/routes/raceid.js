@@ -29,6 +29,7 @@ obsRouter.get("/:raceId", async (req, res) => {
           raceId,
           players: [],
           scenes: [],
+          raceState: race.state,
         });
       }
 
@@ -95,6 +96,7 @@ obsRouter.get("/:raceId", async (req, res) => {
         raceId,
         players: enrichedPlayers,
         scenes,
+        raceState: race.state,
       });
     }
   );

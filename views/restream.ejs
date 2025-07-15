@@ -45,6 +45,12 @@
 </head>
 <body>
   <h1>Manage Restream: Race <%= raceId %></h1>
+  <div style="margin-bottom: 2em;">
+    <button id="startStreamBtn" style="padding: 0.8em 1.5em; font-weight: bold;">
+      Start Stream
+    </button>
+  </div>
+
 
   <% players.forEach((player, idx) => { %>
     <div class="player-section">
@@ -156,6 +162,39 @@
           alert("An error occurred while ending the stream.");
         });
     });
+    document.getElementById("startStreamBtn").addEventListener("click", () => {
+      if (!confirm("Are you sure you want to start streaming to Twitch?")) return;
+
+      fetch(`/api/start-stream/${"<%= raceId %>"}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          if (result.error) {
+            alert(`Error starting stream:\n${result.error}`);
+          } else {
+            alert(result.message || "Streaming started!");
+            document.getElementById("startStreamBtn").style.display = "none";
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          alert("Error starting stream.");
+        });
+    });
+    <% if (raceState === "In Progress") { %>
+      document.addEventListener("DOMContentLoaded", () => {
+        const btn = document.getElementById("startStreamBtn");
+        if (btn) {
+          btn.style.display = "none";
+        }
+      });
+    <% } %>
+
+
 
   </script>
 </body>

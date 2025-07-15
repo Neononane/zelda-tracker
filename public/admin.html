@@ -212,14 +212,15 @@
             <td>
               <button onclick="editRace('${race.race_id}')">Edit</button>
               <button onclick="deleteRace('${race.race_id}')">Delete</button>
-              ${race.state === "Ready for Stream" ? `
-                <button class="startStreamBtn" data-race-id="${race.race_id}">
-                  Start Stream
+              ${race.state === "Ready for Setup" ? `
+                <button class="initializeStreamBtn" data-race-id="${race.race_id}">
+                  Initialize Stream
                 </button>` : ""}
-              ${race.state === 'In Progress'
-                ? `<button onclick="manageRestream('${race.race_id}')">Manage Restream</button>`
-                : ''
-              }  
+              ${["Ready for Stream", "In Progress"].includes(race.state)
+                  ? `<button onclick="manageRestream('${race.race_id}')">Manage Restream</button>`
+                  : ''
+              }
+  
             </td>
           `;
           tbody.appendChild(row);
@@ -234,15 +235,16 @@
           row.children[7].innerHTML = `
             <button onclick="editRace('${race.race_id}')">Edit</button>
             <button onclick="deleteRace('${race.race_id}')">Delete</button>
-            ${race.state === "Ready for Stream" ? `
-              <button class="startStreamBtn" data-race-id="${race.race_id}">
-                Start Stream
+            ${race.state === "Ready for Setup" ? `
+              <button class="initializeStreamBtn" data-race-id="${race.race_id}">
+                Initialize Stream
               </button>` : ""}
-            ${race.state === 'In Progress'
-              ? `<button onclick="manageRestream('${race.race_id}')">Manage Restream</button>`
-              : ''
+            ${["Ready for Stream", "In Progress"].includes(race.state)
+                ? `<button onclick="manageRestream('${race.race_id}')">Manage Restream</button>`
+                : ''
             }
           `;
+
 
         }
 
@@ -775,39 +777,31 @@
       loadRaces();
     });
     document.addEventListener("click", (e) => {
-      if (e.target.classList.contains("startStreamBtn")) {
-        const raceId = e.target.dataset.raceId;
-        const twitchSelect = document.querySelector(
-          `.twitchChannelSelect[data-race-id="${raceId}"]`
-        );
-        if (!twitchSelect || !twitchSelect.value) {
-          alert("You must select a Twitch channel for this race before starting the stream!");
-          return;
-        }
-        if (!confirm(`Start stream for race ${raceId}?`)) return;
+  if (e.target.classList.contains("initializeStreamBtn")) {
+    const raceId = e.target.dataset.raceId;
+    if (!confirm(`Initialize stream for race ${raceId}?`)) return;
 
-        fetch(`/api/start-stream/${raceId}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-            // optionally add auth header here if required
-          }
-        })
-          .then((res) => res.json())
-          .then((result) => {
-            if (result.error) {
-              alert(`Error starting stream:\n${result.error}`);
-            } else {
-              alert(result.message || "Stream started!");
-              loadRaces();
-            }
-          })
-          .catch((err) => {
-            console.error(err);
-            alert("Error sending start stream request.");
-          });
+    fetch(`/api/initialize-stream/${raceId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
       }
-    });
+    })
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.error) {
+          alert(`Error initializing stream:\n${result.error}`);
+        } else {
+          alert(result.message || "Stream pipeline initialized!");
+          loadRaces();
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        alert("Error sending initialize stream request.");
+      });
+  }
+});
 
 
   </script>

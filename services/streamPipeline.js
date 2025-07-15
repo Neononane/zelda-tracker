@@ -125,9 +125,9 @@ async function runStreamPipeline(player1, player2) {
   await sleep(5 * 1000);
 
 
-  console.log("🚀 Starting OBS stream...");
-  execAsync(`node ./services/start-obs.js`);
-  console.log("✅ Stream pipeline complete!");
+  // console.log("🚀 Starting OBS stream...");
+  // execAsync(`node ./services/start-obs.js`);
+  // console.log("✅ Stream pipeline complete!");
 }
 
 module.exports = { runStreamPipeline };

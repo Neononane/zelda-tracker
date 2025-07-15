@@ -1,7 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const sqlite3 = require("sqlite3").verbose();
-const { runStreamPipeline } = require("../../services/streamPipeline");
+//const { runStreamPipeline } = require("../../services/streamPipeline");
+const util = require("util");
+const execAsync = util.promisify(require("child_process").exec);
+
 
 router.post("/start-stream/:raceId", async (req, res) => {
   const raceId = req.params.raceId;
@@ -53,11 +56,17 @@ router.post("/start-stream/:raceId", async (req, res) => {
         const [player1Twitch, player2Twitch] = twitchNames;
 
         console.log(
-          `Running stream pipeline for players: ${player1Twitch} vs ${player2Twitch}`
+          `Running start-obs.js for players: ${player1Twitch} vs ${player2Twitch}`
         );
 
         try {
-          await runStreamPipeline(player1Twitch, player2Twitch);
+          //await runStreamPipeline(player1Twitch, player2Twitch);
+          console.log("🚀 Calling start-obs.js...");
+
+          await execAsync(`node ../../services/start-obs.js`);
+
+          console.log("✅ start-obs.js completed.");
+
 
           // Update race state
           dbRaces.run(

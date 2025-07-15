@@ -55,7 +55,6 @@ router.post("/restream/end-stream", async (req, res) => {
             } else {
               console.log(`✅ Race ${raceId} marked as Complete.`);
               resolve();
-              io.emit('admin:racesUpdated');
             }
           }
         );
