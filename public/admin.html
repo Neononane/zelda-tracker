@@ -179,104 +179,130 @@
     // ===============================
 
     function loadRaces() {
-      fetch('/api/races')
-        .then(res => res.json())
-        .then(races => {
-          const tbody = document.querySelector('#racesTable tbody');
-          tbody.innerHTML = '';
+  fetch('/api/races')
+    .then(res => res.json())
+    .then(races => {
+      const tbody = document.querySelector('#racesTable tbody');
 
-          races.forEach(race => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${race.race_id}</td>
-              <td>${race.name}</td>
-              <td>${race.api_key || "(missing)"}</td>
-              <td>${race.state}</td>
-              <td>${race.created_at}</td>
-              <td>
-                <select class="twitchChannelSelect" data-race-id="${race.race_id}">
-                  <option value="">(none)</option>
-                </select>
-              </td>
-              <td id="players-${race.race_id}">Loading...</td>
-              <td>
-                <button onclick="editRace('${race.race_id}')">Edit</button>
-                <button onclick="deleteRace('${race.race_id}')">Delete</button>
-                ${race.state === "Ready for Stream" ? `
-                  <button class="startStreamBtn" data-race-id="${race.race_id}">
-                    Start Stream
-                  </button>` : ""}
-                ${race.state === 'In Progress'
-                  ? `<button onclick="manageRestream('${race.race_id}')">Manage Restream</button>`
-                  : ''
-                }  
-              </td>
-            `;
-            tbody.appendChild(row);
+      // Track which race IDs we see in this load
+      const seenRaceIds = new Set();
 
-            fetch(`/api/race/${race.race_id}/players`)
-              .then(res => res.json())
-              .then(players => {
-                const displayNames = players.map(p => p.displayName || p.backendName);
-                document.getElementById(`players-${race.race_id}`).textContent =
-                  displayNames.length > 0
-                    ? displayNames.join(', ')
-                    : "(none)";
-              })
-              .catch(() => {
-                document.getElementById(`players-${race.race_id}`).textContent =
-                  "Error loading players";
-              });
-          });
-          fetch('/api/twitch-channels')
-            .then(r => r.json())
-            .then(data => {
-              document.querySelectorAll('.twitchChannelSelect').forEach(select => {
-                const raceId = select.dataset.raceId;
-                const race = races.find(r => r.race_id === raceId);
+      races.forEach(race => {
+        seenRaceIds.add(race.race_id);
 
-                // Clear existing options except blank
-                select.innerHTML = '<option value="">(none)</option>';
+        let row = tbody.querySelector(`tr[data-race-id="${race.race_id}"]`);
+        let isNew = false;
 
-                data.channels.forEach(channel => {
-                  const opt = document.createElement('option');
-                  opt.value = channel;
-                  opt.textContent = channel;
-                  if (race.twitch_channel === channel) {
-                    opt.selected = true;
-                  }
-                  select.appendChild(opt);
-                });
+        if (!row) {
+          // Create a new row
+          row = document.createElement('tr');
+          row.setAttribute("data-race-id", race.race_id);
+          row.innerHTML = `
+            <td>${race.race_id}</td>
+            <td>${race.name}</td>
+            <td>${race.api_key || "(missing)"}</td>
+            <td>${race.state}</td>
+            <td>${race.created_at}</td>
+            <td>
+              <select class="twitchChannelSelect" data-race-id="${race.race_id}">
+                <option value="">(none)</option>
+              </select>
+            </td>
+            <td id="players-${race.race_id}">Loading...</td>
+            <td>
+              <button onclick="editRace('${race.race_id}')">Edit</button>
+              <button onclick="deleteRace('${race.race_id}')">Delete</button>
+              ${race.state === "Ready for Stream" ? `
+                <button class="startStreamBtn" data-race-id="${race.race_id}">
+                  Start Stream
+                </button>` : ""}
+              ${race.state === 'In Progress'
+                ? `<button onclick="manageRestream('${race.race_id}')">Manage Restream</button>`
+                : ''
+              }  
+            </td>
+          `;
+          tbody.appendChild(row);
+          isNew = true;
+        } else {
+          // Update existing row fields
+          row.children[1].textContent = race.name;
+          row.children[2].textContent = race.api_key || "(missing)";
+          row.children[3].textContent = race.state;
+          row.children[4].textContent = race.created_at;
+        }
 
-                // Handle change
-                select.addEventListener('change', () => {
-                  const selected = select.value;
+        // Populate the Twitch dropdown
+        fetch('/api/twitch-channels')
+          .then(r => r.json())
+          .then(data => {
+            const select = row.querySelector('.twitchChannelSelect');
+            if (!select) return;
 
-                  fetch(`/api/race/${raceId}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ twitchChannel: selected || null })
-                  })
-                    .then((res) => {
-                      if (!res.ok) {
-                        alert("Failed to save Twitch channel.");
-                      } else {
-                        console.log("Twitch channel updated for race", raceId);
-                        refreshRaceRow(raceId);
-                      }
-                    })
-                    .catch((err) => {
-                      console.error(err);
-                      alert("Error saving Twitch channel.");
-                    });
-                });
-
-
-              });
+            select.innerHTML = '<option value="">(none)</option>';
+            data.channels.forEach(channel => {
+              const opt = document.createElement('option');
+              opt.value = channel;
+              opt.textContent = channel;
+              if (race.twitch_channel === channel) {
+                opt.selected = true;
+              }
+              select.appendChild(opt);
             });
 
-        });
-    }
+            if (isNew) {
+              select.addEventListener('change', () => {
+                const selected = select.value;
+
+                fetch(`/api/race/${race.race_id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ twitchChannel: selected || null })
+                })
+                  .then((res) => {
+                    if (!res.ok) {
+                      alert("Failed to save Twitch channel.");
+                    } else {
+                      console.log("Twitch channel updated for race", race.race_id);
+                      refreshRaceRow(race.race_id);
+                    }
+                  })
+                  .catch((err) => {
+                    console.error(err);
+                    alert("Error saving Twitch channel.");
+                  });
+              });
+            }
+          });
+
+        // Load players only for new rows
+        if (isNew) {
+          fetch(`/api/race/${race.race_id}/players`)
+            .then(res => res.json())
+            .then(players => {
+              const displayNames = players.map(p => p.displayName || p.backendName);
+              document.getElementById(`players-${race.race_id}`).textContent =
+                displayNames.length > 0
+                  ? displayNames.join(', ')
+                  : "(none)";
+            })
+            .catch(() => {
+              document.getElementById(`players-${race.race_id}`).textContent =
+                "Error loading players";
+            });
+        }
+      });
+
+      // Remove rows for deleted races
+      const allRows = tbody.querySelectorAll('tr[data-race-id]');
+      allRows.forEach(row => {
+        const id = row.getAttribute('data-race-id');
+        if (!seenRaceIds.has(id)) {
+          row.remove();
+        }
+      });
+    });
+}
 
     function createRace() {
       const name = document.getElementById('raceName').value;
