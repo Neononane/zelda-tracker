@@ -66,6 +66,11 @@
   Race Name:
   <input id="raceName" placeholder="Race name" /><br/><br/>
 
+  Twitch Channel:
+    <select id="twitchChannel">
+      <option value="">Loading channels...</option>
+    </select><br/><br/>
+
   Number of Players:
   <select id="numPlayers" onchange="renderPlayerDropdowns()">
     <option value="2">2 Players</option>
@@ -85,6 +90,7 @@
         <th>API Key</th>
         <th>State</th>
         <th>Created</th>
+        <th>Twitch Channel</th>
         <th>Players</th>
         <th>Actions</th>
       </tr>
@@ -143,6 +149,11 @@
         <option value="Complete">Complete</option>
       </select><br><br>
 
+      <label>Twitch Channel:</label><br>
+        <select id="editTwitchChannel">
+          <option value="">Loading channels...</option>
+        </select><br><br>
+
       <label>Number of Players:</label><br>
       <select id="editNumPlayers" onchange="renderEditPlayerDropdowns()">
         <option value="2">2 Players</option>
@@ -182,6 +193,11 @@
               <td>${race.api_key || "(missing)"}</td>
               <td>${race.state}</td>
               <td>${race.created_at}</td>
+              <td>
+                <select class="twitchChannelSelect" data-race-id="${race.race_id}">
+                  <option value="">(none)</option>
+                </select>
+              </td>
               <td id="players-${race.race_id}">Loading...</td>
               <td>
                 <button onclick="editRace('${race.race_id}')">Edit</button>
@@ -195,7 +211,6 @@
                   : ''
                 }  
               </td>
-
             `;
             tbody.appendChild(row);
 
@@ -213,6 +228,39 @@
                   "Error loading players";
               });
           });
+          fetch('/api/twitch-channels')
+            .then(r => r.json())
+            .then(data => {
+              document.querySelectorAll('.twitchChannelSelect').forEach(select => {
+                const raceId = select.dataset.raceId;
+                const race = races.find(r => r.race_id === raceId);
+
+                // Clear existing options except blank
+                select.innerHTML = '<option value="">(none)</option>';
+
+                data.channels.forEach(channel => {
+                  const opt = document.createElement('option');
+                  opt.value = channel;
+                  opt.textContent = channel;
+                  if (race.twitch_channel === channel) {
+                    opt.selected = true;
+                  }
+                  select.appendChild(opt);
+                });
+
+                // Handle change
+                select.addEventListener('change', () => {
+                  const selected = select.value;
+                  fetch(`/api/race/${raceId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ twitchChannel: selected || null })
+                  })
+                    .then(() => loadRaces());
+                });
+              });
+            });
+
         });
     }
 
@@ -228,10 +276,12 @@
         }
       }
 
+      const twitchChannel = document.getElementById('twitchChannel').value;
+
       fetch('/api/races', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, racers })
+        body: JSON.stringify({ name, racers, twitchChannel })
       })
       .then(res => res.json())
       .then(data => {
@@ -259,6 +309,7 @@
 
           document.getElementById('editRaceName').value = race.name;
           document.getElementById('editRaceState').value = race.state;
+          loadEditTwitchChannels(race.twitch_channel);
 
           fetch(`/api/race/${raceId}/players`)
             .then(res => res.json())
@@ -274,6 +325,7 @@
     function saveEditedRace() {
       const name = document.getElementById('editRaceName').value;
       const state = document.getElementById('editRaceState').value;
+      const twitchChannel = document.getElementById('editTwitchChannel').value;
       const numPlayers = parseInt(document.getElementById('editNumPlayers').value, 10);
       const racers = [];
 
@@ -287,7 +339,7 @@
       fetch(`/api/race/${currentEditRaceId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, state, racers })
+        body: JSON.stringify({ name, state, racers, twitchChannel })
       }).then(() => {
         hideEditRaceModal();
         loadRaces();
@@ -573,10 +625,66 @@
         method: 'DELETE'
       }).then(() => loadPlayers());
     }
+    function loadTwitchChannels() {
+      fetch('/api/twitch-channels')
+        .then(r => r.json())
+        .then(data => {
+          const select = document.getElementById('twitchChannel');
+          select.innerHTML = '';
+
+          const blank = document.createElement('option');
+          blank.value = '';
+          blank.textContent = 'Select a Twitch channel...';
+          select.appendChild(blank);
+
+          data.channels.forEach(channel => {
+            const opt = document.createElement('option');
+            opt.value = channel;
+            opt.textContent = channel;
+            select.appendChild(opt);
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          const select = document.getElementById('twitchChannel');
+          select.innerHTML = '<option value="">Error loading channels</option>';
+        });
+    }
+    function loadEditTwitchChannels(selectedChannel = "") {
+      fetch('/api/twitch-channels')
+        .then(r => r.json())
+        .then(data => {
+          const select = document.getElementById('editTwitchChannel');
+          select.innerHTML = '';
+
+          const blank = document.createElement('option');
+          blank.value = '';
+          blank.textContent = '(none)';
+          select.appendChild(blank);
+
+          data.channels.forEach(channel => {
+            const opt = document.createElement('option');
+            opt.value = channel;
+            opt.textContent = channel;
+            if (channel === selectedChannel) {
+              opt.selected = true;
+            }
+            select.appendChild(opt);
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          const select = document.getElementById('editTwitchChannel');
+          select.innerHTML = '<option value="">Error loading channels</option>';
+        });
+    }
+
+
 
     loadRaces();
     loadPlayers();
     renderPlayerDropdowns();
+    loadTwitchChannels();
 
     socket.on('admin:racesUpdated', () => {
       loadRaces();
@@ -584,6 +692,13 @@
     document.addEventListener("click", (e) => {
       if (e.target.classList.contains("startStreamBtn")) {
         const raceId = e.target.dataset.raceId;
+        const twitchSelect = document.querySelector(
+          `.twitchChannelSelect[data-race-id="${raceId}"]`
+        );
+        if (!twitchSelect || !twitchSelect.value) {
+          alert("You must select a Twitch channel for this race before starting the stream!");
+          return;
+        }
         if (!confirm(`Start stream for race ${raceId}?`)) return;
 
         fetch(`/api/start-stream/${raceId}`, {

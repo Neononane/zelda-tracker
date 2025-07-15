@@ -2,9 +2,9 @@ import OBSWebSocket from "obs-websocket-js";
 
 const obs = new OBSWebSocket();
 
-async function connectOBSAndAddStream() {
+async function connectOBSAndAddStream(twitchChannel) {
   try {
-    await obs.connect("ws://localhost:4455");
+    await obs.connect(process.env.OBS_ADDRESS);
     console.log("Connected to OBS!");
 
     // Check if streaming
@@ -18,30 +18,42 @@ async function connectOBSAndAddStream() {
       console.log("Stream is not running. Good to proceed.");
     }
 
-await obs.call("SetVideoSettings", {
-  baseWidth: 1280,
-  baseHeight: 720,
-  outputWidth: 1280,
-  outputHeight: 720,
-  fpsNumerator: 30,
-  fpsDenominator: 1
-});
+    await obs.call("SetVideoSettings", {
+      baseWidth: 1280,
+      baseHeight: 720,
+      outputWidth: 1280,
+      outputHeight: 720,
+      fpsNumerator: 30,
+      fpsDenominator: 1
+    });
 
-	
+    // Handle stream key selection
+    if (!twitchChannel) {
+      console.log("No Twitch channel provided. Defaulting to DEV.");
+      twitchChannel = "DEV";
+    }
 
-    // Update stream settings
+    const envVarName = `${twitchChannel}_TWITCH_KEY`;
+    const streamKey = process.env[envVarName];
+
+    if (!streamKey) {
+      throw new Error(`No stream key found for channel: ${twitchChannel}`);
+    }
+
+    console.log(`Using stream key for channel: ${twitchChannel}`);
+
     await obs.call("SetStreamServiceSettings", {
       streamServiceType: "rtmp_custom",
       streamServiceSettings: {
         server: "rtmp://live.twitch.tv/app/",
-        key: process.env.TWITCH_KEY,
+        key: streamKey,
         use_auth: false
       }
     });
+
     await obs.call("SetStudioModeEnabled", {
       studioModeEnabled: false
     });
-
 
     console.log("Stream settings updated!");
 
@@ -51,7 +63,13 @@ await obs.call("SetVideoSettings", {
 
   } catch (error) {
     console.error("Error connecting to OBS:", error);
+    process.exit(1);
   }
 }
 
-connectOBSAndAddStream();
+// -----------------------------------------------
+// Execute immediately if run via CLI
+// -----------------------------------------------
+
+const twitchChannelArg = process.argv[2];
+connectOBSAndAddStream(twitchChannelArg);

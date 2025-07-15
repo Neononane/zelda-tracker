@@ -108,16 +108,30 @@ app.get('/', (req, res) => {
   res.send('Zelda Tracker running!');
 });
 
+//Twitch information
+app.get('/api/twitch-channels', (req, res) => {
+  const env = process.env;
+  const channelsEnv = env.TWITCH_CHANNELS || "";
+  const channels = channelsEnv
+    .split(',')
+    .map(c => c.trim())
+    .filter(Boolean);
+
+  res.json({ channels });
+});
+
+
 // Create a new race
 app.post('/api/races', (req, res) => {
   const name = req.body.name || "Unnamed Race";
   const racers = req.body.racers || [];
+  const twitchChannel = req.body.twitchChannel || null;
   const raceId = generateRaceId();
   const apiKey = generateApiKey();
 
   db.run(
-    `INSERT INTO races (race_id, name, api_key, state) VALUES (?, ?, ?, ?)`,
-    [raceId, name, apiKey, 'Ready for Stream'],
+    `INSERT INTO races (race_id, name, api_key, state, twitch_channel) VALUES (?, ?, ?, ?, ?)`,
+    [raceId, name, apiKey, 'Ready for Stream', twitchChannel],
     function (err) {
       if (err) {
         console.error(err);
@@ -367,7 +381,7 @@ app.patch(
 //Get all races open right now
 app.get('/api/races', (req, res) => {
   db.all(
-    `SELECT race_id, name, created_at, state, api_key FROM races`,
+    `SELECT race_id, name, created_at, state, api_key, twitch_channel FROM races`,
     [],
     (err, rows) => {
       if (err) return res.status(500).send("DB error");
@@ -396,16 +410,18 @@ app.delete('/api/race/:raceId', (req, res) => {
 //update the races
 app.patch('/api/race/:raceId', (req, res) => {
   const raceId = req.params.raceId;
-  const { name, state, racers } = req.body;
+  const { name, state, racers, twitchChannel } = req.body;
 
   if (!name || !state || !Array.isArray(racers)) {
     return res.status(400).send("Invalid payload");
   }
 
-  // Step 1: update race name and state
+  // Step 1: update race name, state, and twitch_channel
   db.run(
-    `UPDATE races SET name = ?, state = ? WHERE race_id = ?`,
-    [name, state, raceId],
+    `UPDATE races
+     SET name = ?, state = ?, twitch_channel = ?
+     WHERE race_id = ?`,
+    [name, state, twitchChannel || null, raceId],
     function(err) {
       if (err) {
         console.error(err);
@@ -465,6 +481,7 @@ app.patch('/api/race/:raceId', (req, res) => {
     }
   );
 });
+
 
 
 ///Players APIs below

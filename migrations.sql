@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS races (
   name TEXT,
   api_key TEXT,
   state TEXT DEFAULT 'Ready for Stream',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  twitch_channel TEXT
 );
 
 CREATE TABLE IF NOT EXISTS players (
