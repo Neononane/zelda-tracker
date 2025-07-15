@@ -17,7 +17,17 @@ async function stopStreamlink() {
 
     for (const pid of pids) {
       console.log(`Killing streamlink process ${pid}...`);
-      execSync(`kill -9 ${pid}`);
+      try {
+        execSync(`kill -9 ${pid}`);
+        console.log(`✅ Killed streamlink process ${pid}`);
+        } catch (err) {
+        if (err.message.includes("No such process")) {
+            console.log(`ℹ️ Streamlink process ${pid} was already gone.`);
+        } else {
+            console.error("Failed to kill streamlink:", err);
+        }
+        }
+
       console.log(`✅ Killed streamlink process ${pid}`);
     }
   } catch (err) {
