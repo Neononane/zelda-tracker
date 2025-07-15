@@ -63,7 +63,7 @@ router.post("/start-stream/:raceId", async (req, res) => {
           //await runStreamPipeline(player1Twitch, player2Twitch);
           console.log("🚀 Calling start-obs.js...");
 
-          await execAsync(`node ../../services/start-obs.js`);
+          await execAsync(`node ./services/start-obs.js`);
 
           console.log("✅ start-obs.js completed.");
 
