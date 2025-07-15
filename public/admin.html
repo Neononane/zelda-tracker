@@ -230,6 +230,20 @@
           row.children[2].textContent = race.api_key || "(missing)";
           row.children[3].textContent = race.state;
           row.children[4].textContent = race.created_at;
+
+          row.children[7].innerHTML = `
+            <button onclick="editRace('${race.race_id}')">Edit</button>
+            <button onclick="deleteRace('${race.race_id}')">Delete</button>
+            ${race.state === "Ready for Stream" ? `
+              <button class="startStreamBtn" data-race-id="${race.race_id}">
+                Start Stream
+              </button>` : ""}
+            ${race.state === 'In Progress'
+              ? `<button onclick="manageRestream('${race.race_id}')">Manage Restream</button>`
+              : ''
+            }
+          `;
+
         }
 
         // Populate the Twitch dropdown
