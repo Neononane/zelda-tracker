@@ -92,6 +92,11 @@
     </div>
   <% }); %>
 
+  <div style="margin-top: 2em;">
+    <button id="endStreamBtn">End Stream</button>
+  </div>
+
+
   <script>
     function adjustVolume(obsSourceName, delta) {
       fetch(`/restream/adjust-volume`, {
@@ -125,6 +130,33 @@
         alert(`Switched to scene: ${scene}`);
       });
     }
+
+    document.getElementById("endStreamBtn").addEventListener("click", () => {
+      if (!confirm("Are you sure you want to end the stream?")) return;
+
+      fetch("/restream/end-stream", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ raceId: "<%= raceId %>" })
+      })
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error("Failed to end stream.");
+          }
+          return res.json();
+        })
+        .then((data) => {
+          alert(data.message || "Stream successfully ended.");
+          window.location.href = "/admin.html";
+        })
+        .catch((err) => {
+          console.error(err);
+          alert("An error occurred while ending the stream.");
+        });
+    });
+
   </script>
 </body>
 

@@ -8,6 +8,7 @@ const path = require('path');
 const obsRouter = require('./server/routes/obs');
 const obsPagesRouter = require('./server/routes/raceid');
 const startStreamRouter = require('./server/routes/startStream');
+const endStreamRoutes = require("./routes/endStream.js");
 
 const app = express();
 const server = http.createServer(app);
@@ -19,6 +20,7 @@ app.use(express.static('public')); // to serve overlay page later
 app.use("/api/obs",obsRouter);
 app.use("/api", startStreamRouter);
 app.use("/restream",obsPagesRouter);
+app.use(endStreamRoutes);
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
