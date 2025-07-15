@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const { stopDiscord } = require("../services/discord-control.js");
-const { stopOBS } = require("../services/obs-control.js");
-const { stopStreamlink } = require("../services/streamlink-control.js");
+const { stopDiscord } = require("../../services/discord-control.js");
+const { stopOBS } = require("../../services/obs-control.js");
+const { stopStreamlink } = require("../../services/streamlink-control.js");
 
 const sqlite3 = require("sqlite3");
 const db = new sqlite3.Database("./data/tracker.db");
