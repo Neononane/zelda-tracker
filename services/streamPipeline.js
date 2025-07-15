@@ -1,6 +1,8 @@
 const { spawn } = require("child_process");
 const util = require("util");
 const execAsync = util.promisify(require("child_process").exec);
+const { startDiscord, stopDiscord } = require("./discord-control.js");
+
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -75,6 +77,22 @@ async function runStreamPipeline(player1, player2) {
   console.log("🚀 Switching scene to Intro...");
   await execAsync(`node ./services/switch-scene.js Intro`);
   await sleep(5 * 1000);
+
+  console.log("🚀 Starting Virtual Camera...");
+  await execAsync(`node ./services/start-virtual-cam.js`);
+  await sleep(5 * 1000);
+
+  console.log("🚀 Starting Discord automation...");
+  try {
+    await startDiscord();
+    console.log("✅ Discord automation complete.");
+  } catch (err) {
+    console.error("❌ Discord automation failed:", err);
+    console.log("Aborting pipeline!");
+    return;
+  }
+  await sleep(5 * 1000);
+
 
   console.log("🚀 Starting OBS stream...");
   execAsync(`node ./services/start-obs.js`);
