@@ -251,13 +251,27 @@
                 // Handle change
                 select.addEventListener('change', () => {
                   const selected = select.value;
+
                   fetch(`/api/race/${raceId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ twitchChannel: selected || null })
                   })
-                    .then(() => loadRaces());
+                    .then((res) => {
+                      if (!res.ok) {
+                        alert("Failed to save Twitch channel.");
+                      } else {
+                        console.log("Twitch channel updated for race", raceId);
+                        refreshRaceRow(raceId);
+                      }
+                    })
+                    .catch((err) => {
+                      console.error(err);
+                      alert("Error saving Twitch channel.");
+                    });
                 });
+
+
               });
             });
 
@@ -511,6 +525,37 @@
     function hideEditRaceModal() {
       document.getElementById('editRaceModal').classList.add('hidden');
     }
+    function refreshRaceRow(raceId) {
+      fetch('/api/races')
+        .then(res => res.json())
+        .then(races => {
+          const race = races.find(r => r.race_id === raceId);
+          if (!race) return;
+
+          // Only replace this row
+          const row = document.querySelector(
+            `tr[data-race-id="${raceId}"]`
+          );
+
+          if (!row) return;
+
+          // Update Twitch dropdown value:
+          const twitchSelect = row.querySelector('.twitchChannelSelect');
+          if (twitchSelect) {
+            twitchSelect.value = race.twitch_channel || "";
+          }
+
+          // Re-fetch and update players cell:
+          fetch(`/api/race/${raceId}/players`)
+            .then(res => res.json())
+            .then(players => {
+              const cell = document.getElementById(`players-${raceId}`);
+              const names = players.map(p => p.displayName || p.backendName);
+              cell.textContent = names.length > 0 ? names.join(", ") : "(none)";
+            });
+        });
+    }
+
 
     // ===============================
     // PLAYERS
