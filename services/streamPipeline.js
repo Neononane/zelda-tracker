@@ -3,6 +3,33 @@ const util = require("util");
 const execAsync = util.promisify(require("child_process").exec);
 const { startDiscord, stopDiscord } = require("./discord-control.js");
 
+const OBSWebSocket = require("obs-websocket-js");
+
+async function setOBSVideoSettings() {
+  const obs = new OBSWebSocket();
+
+  try {
+    await obs.connect(process.env.OBS_ADDRESS);
+    console.log("✅ Connected to OBS for video settings.");
+
+    await obs.call("SetVideoSettings", {
+      baseWidth: 1280,
+      baseHeight: 720,
+      outputWidth: 1280,
+      outputHeight: 720,
+      fpsNumerator: 30,
+      fpsDenominator: 1
+    });
+
+    console.log("✅ Video settings applied in OBS.");
+    await obs.disconnect();
+  } catch (err) {
+    console.error("❌ Failed to set video settings in OBS:", err);
+    process.exit(1);
+  }
+}
+
+
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -60,6 +87,10 @@ async function runStreamPipeline(player1, player2) {
 
   launchOBS();
   await sleep(10 * 1000);
+
+  console.log("🚀 Setting video settings in OBS...");
+  await setOBSVideoSettings();
+  await sleep (1 * 1000);
 
   console.log("🚀 Setting preview scene to Scene...");
   await execAsync(`node ./services/set-preview-scene.js Scene`);

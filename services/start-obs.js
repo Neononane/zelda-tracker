@@ -13,15 +13,15 @@ async function connectOBSAndAddStream(twitchChannel) {
     if (streamingStatus.outputActive) {
       console.log("OBS output already running. Skipping video settings change.");
     } else {
-      console.log("No outputs active. Applying video settings...");
-      await obs.call("SetVideoSettings", {
-        baseWidth: 1280,
-        baseHeight: 720,
-        outputWidth: 1280,
-        outputHeight: 720,
-        fpsNumerator: 30,
-        fpsDenominator: 1
-      });
+      console.log("No outputs active. Good to proceed...");
+      // await obs.call("SetVideoSettings", {
+      //   baseWidth: 1280,
+      //   baseHeight: 720,
+      //   outputWidth: 1280,
+      //   outputHeight: 720,
+      //   fpsNumerator: 30,
+      //   fpsDenominator: 1
+      // });
     }
 
     // Handle stream key selection
