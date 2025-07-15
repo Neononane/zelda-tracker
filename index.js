@@ -55,6 +55,29 @@ db.exec(migrationsSql, (err) => {
     console.log("Database migrations applied!");
   }
 });
+// Ensure twitch_channel column exists in races table
+db.all(`PRAGMA table_info(races)`, [], (err, columns) => {
+  if (err) {
+    console.error("Error checking races table columns:", err);
+    return;
+  }
+
+  const hasColumn = columns.some(col => col.name === 'twitch_channel');
+
+  if (!hasColumn) {
+    console.log("Adding missing twitch_channel column to races table...");
+    db.run(`ALTER TABLE races ADD COLUMN twitch_channel TEXT`, [], (err) => {
+      if (err) {
+        console.error("Error adding twitch_channel column:", err);
+      } else {
+        console.log("twitch_channel column added to races table!");
+      }
+    });
+  } else {
+    console.log("twitch_channel column already exists in races table.");
+  }
+});
+
 
 playersDb.exec(playersMigrationsSql, (err) => {
   if (err) {
