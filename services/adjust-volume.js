@@ -5,74 +5,28 @@ const obs = new OBSWebSocket();
 const obsAddress = process.env.OBS_ADDRESS;
 const obsPassword = process.env.OBS_PASSWORD; // e.g. "secret" if set
 
-// default step when using "up" or "down"
-const defaultStepPct = 10; // = 10%
-
-async function adjustVolume(argument) {
+async function adjustVolume(sourceName, deltaPct) {
   try {
     await obs.connect(obsAddress, obsPassword);
 
-    // Get list of all inputs
-    const { inputs } = await obs.call("GetInputList");
-
-    // Find the single unmuted audio source
-    let activeInput = null;
-
-    for (const input of inputs) {
-      const { inputMuted } = await obs.call("GetInputMute", {
-        inputName: input.inputName,
-      });
-
-      if (!inputMuted) {
-        activeInput = input;
-        break;
-      }
-    }
-
-    if (!activeInput) {
-      console.log("❌ No active audio source found!");
-      await obs.disconnect();
-      return;
-    }
-
-    console.log(` Active audio source: ${activeInput.inputName}`);
-
-    // Get current volume multiplier (0.0 to 10.0)
+    // Get current volume
     const { inputVolumeMul } = await obs.call("GetInputVolume", {
-      inputName: activeInput.inputName,
+      inputName: sourceName
     });
 
-    let newVolume = inputVolumeMul;
+    let newVolume = inputVolumeMul * (1 + deltaPct / 100);
 
-    let stepPct = 0;
-
-    if (argument === "up") {
-      stepPct = defaultStepPct;
-    } else if (argument === "down") {
-      stepPct = -defaultStepPct;
-    } else if (!isNaN(parseFloat(argument))) {
-      stepPct = parseFloat(argument);
-    } else {
-      console.log("Invalid argument. Use up, down, or a numeric percentage.");
-      await obs.disconnect();
-      return;
-    }
-
-    const multiplier = 1 + (stepPct / 100);
-
-    newVolume = inputVolumeMul * multiplier;
-
-    // clamp
+    // Clamp between 0.0 and 10.0
     if (newVolume > 10.0) newVolume = 10.0;
     if (newVolume < 0) newVolume = 0;
 
     await obs.call("SetInputVolume", {
-      inputName: activeInput.inputName,
-      inputVolumeMul: newVolume,
+      inputName: sourceName,
+      inputVolumeMul: newVolume
     });
 
     console.log(
-      `✅ New volume for ${activeInput.inputName}: ${(newVolume * 100).toFixed(1)}%`
+      `✅ New volume for ${sourceName}: ${(newVolume * 100).toFixed(1)}%`
     );
 
     await obs.disconnect();
@@ -81,17 +35,22 @@ async function adjustVolume(argument) {
   }
 }
 
-// Parse CLI arg
-const arg = process.argv[2];
+const args = process.argv.slice(2);
 
-if (!arg) {
+if (args.length !== 2) {
   console.log("Usage:");
-  console.log("  node adjust-volume.js up");
-  console.log("  node adjust-volume.js down");
-  console.log("  node adjust-volume.js <percentage>");
-  console.log("    e.g. node adjust-volume.js 25");
-  console.log("         node adjust-volume.js -30");
+  console.log("  node adjust-volume.js <sourceName> <delta>");
+  console.log("    e.g. node adjust-volume.js Player1 25");
+  console.log("         node adjust-volume.js Discord -30");
   process.exit(1);
 }
 
-adjustVolume(arg);
+const sourceName = args[0];
+const delta = parseFloat(args[1]);
+
+if (isNaN(delta)) {
+  console.log("Delta must be a number!");
+  process.exit(1);
+}
+
+adjustVolume(sourceName, delta);

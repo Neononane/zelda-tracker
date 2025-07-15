@@ -105,7 +105,7 @@ obsRouter.post("/adjust-volume", (req, res) => {
   const player = req.body.player;
   const delta = req.body.delta;
 
-  const child = spawn("node", ["./services/adjust-volume.js", delta.toString()], {
+  const child = spawn("node", ["./services/adjust-volume.js", player, delta.toString()], {
     stdio: "inherit"
   });
   child.on("close", () => res.json({ success: true }));

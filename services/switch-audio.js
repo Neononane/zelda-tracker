@@ -2,45 +2,31 @@ import OBSWebSocket from "obs-websocket-js";
 
 const obs = new OBSWebSocket();
 
-// Change if your websocket address/password differ
-const obsAddress = "ws://127.0.0.1:4455";
-const obsPassword = ""; // set your password if required
+const obsAddress = process.env.OBS_ADDRESS;
+const obsPassword = process.env.OBS_PASSWORD;
 
-/**
- * Switches audio to a single source
- */
-async function switchAudio(toSource) {
+async function switchAudio(selectedPlayerName) {
   try {
     await obs.connect(obsAddress, obsPassword);
 
-    // Get list of ALL audio inputs
     const { inputs } = await obs.call("GetInputList");
 
-    // Filter to those with audio enabled
-    const audioInputs = inputs.filter(
-      (i) => i.inputKind && i.inputKind.includes("ffmpeg_source") || i.inputKind.includes("media_source") || i.inputKind.includes("browser_source")
-    );
+    for (const input of inputs) {
+      let shouldMute = true;
 
-    console.log("All detected audio-capable sources:");
-    console.table(audioInputs.map(x => ({
-      name: x.inputName,
-      kind: x.inputKind
-    })));
-
-    for (const input of audioInputs) {
-      const isTarget = input.inputName === toSource;
+      if (input.inputName === "Discord") {
+        shouldMute = false; // Discord stays unmuted always
+      } else if (input.inputName === selectedPlayerName) {
+        shouldMute = false;
+      }
 
       await obs.call("SetInputMute", {
         inputName: input.inputName,
-        inputMuted: !isTarget,
+        inputMuted: shouldMute
       });
-
-      console.log(
-        `Audio ${isTarget ? "UNmuted" : "Muted"} for: ${input.inputName}`
-      );
     }
 
-    console.log(`✅ Audio switched to ONLY ${toSource}`);
+    console.log(`✅ Audio switched to ${selectedPlayerName} (Discord remains on)`);
 
     await obs.disconnect();
   } catch (e) {
@@ -48,12 +34,14 @@ async function switchAudio(toSource) {
   }
 }
 
-// Parse CLI arg
-const sourceName = process.argv[2];
+// handle command-line args
+const args = process.argv.slice(2);
 
-if (!sourceName) {
-  console.log("Usage: node switch-audio.js <SourceName>");
+if (args.length !== 1) {
+  console.log("Usage: node switch-audio.js <sourceName>");
   process.exit(1);
 }
 
-switchAudio(sourceName);
+const target = args[0];
+
+switchAudio(target);

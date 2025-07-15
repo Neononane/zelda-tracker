@@ -67,6 +67,16 @@
         </button>
       <% }); %>
     </div>
+    <div class="player-section">
+  <h2>Discord Audio</h2>
+  <h3>Adjust Volume:</h3>
+  <% [-100,-50,-25,-5,5,25,50,100].forEach(delta => { %>
+    <button onclick="adjustVolume('Discord', <%= delta %>)">
+      <%= delta > 0 ? '+' : '' %><%= delta %>%
+    </button>
+  <% }); %>
+</div>
+
   <% }); %>
 
   <h2>Switch Audio:</h2>
