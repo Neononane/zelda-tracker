@@ -8,7 +8,7 @@ const path = require('path');
 const obsRouter = require('./server/routes/obs');
 const obsPagesRouter = require('./server/routes/raceid');
 const startStreamRouter = require('./server/routes/startStream');
-const endStreamRoutes = require("./routes/endStream.js");
+const endStreamRoutes = require("./server/routes/endStream.js");
 
 const app = express();
 const server = http.createServer(app);
