@@ -14,93 +14,111 @@ obsRouter.get("/:raceId", async (req, res) => {
   const playersDb = new sqlite3.Database("./data/players.db");
   const { saveMapping } = require("../lib/obsMappings");
 
-  trackerDb.all(
-    `SELECT backend_name, display_name FROM players WHERE race_id = ?`,
+  trackerDb.get(
+    `SELECT * FROM races WHERE race_id = ?`,
     [raceId],
-    async (err, trackerRows) => {
+    (err, raceRow) => {
       if (err) {
         console.error(err);
-        return res.status(500).send("Database error fetching race players.");
-      }
-
-      if (!trackerRows || trackerRows.length === 0) {
         trackerDb.close();
-        return res.render("restream.ejs", {
-          raceId,
-          players: [],
-          scenes: [],
-          raceState: race.state,
-        });
+        return res.status(500).send("Database error fetching race.");
       }
 
-      const enrichedPlayers = [];
-
-      for (let i = 0; i < trackerRows.length; i++) {
-        const row = trackerRows[i];
-        const backendName = row.backend_name;
-        const displayName = row.display_name || backendName;
-
-        // Determine obs_source_name
-        const obsSourceName = `Player${i + 1}`;
-
-        await new Promise((resolve) => {
-          playersDb.get(
-            `SELECT twitch_name FROM library_players WHERE internal_name = ?`,
-            [backendName],
-            (err, libRow) => {
-              if (err) {
-                console.error(err);
-                enrichedPlayers.push({
-                  playerKey: `player${i + 1}`,
-                  backend_name: backendName,
-                  display_name: displayName,
-                  twitch_name: null,
-                  obs_source_name: obsSourceName
-                });
-                return resolve();
-              }
-
-              enrichedPlayers.push({
-                playerKey: `player${i + 1}`,
-                backend_name: backendName,
-                display_name: displayName,
-                twitch_name: libRow ? libRow.twitch_name : null,
-                obs_source_name: obsSourceName
-              });
-              resolve();
-            }
-          );
-        });
-      }
-      const dynamicSourceMap = {};
-    enrichedPlayers.forEach((p, i) => {
-    dynamicSourceMap[`player${i+1}`] = p.obs_source_name;
-    });
-
-    saveMapping(raceId, dynamicSourceMap);
-
-      playersDb.close();
-      trackerDb.close();
-
-      let scenes = [];
-      try {
-        await obs.connect("ws://127.0.0.1:4455");
-        const result = await obs.call("GetSceneList");
-        scenes = result.scenes.map((scene) => scene.sceneName);
-        obs.disconnect();
-      } catch (e) {
-        console.error("Could not fetch scenes from OBS:", e.message);
+      if (!raceRow) {
+        trackerDb.close();
+        return res.status(404).send("Race not found.");
       }
 
-      res.render("restream.ejs", {
-        raceId,
-        players: enrichedPlayers,
-        scenes,
-        raceState: race.state,
-      });
+      trackerDb.all(
+        `SELECT backend_name, display_name FROM players WHERE race_id = ?`,
+        [raceId],
+        async (err, trackerRows) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).send("Database error fetching race players.");
+          }
+
+          if (!trackerRows || trackerRows.length === 0) {
+            trackerDb.close();
+            return res.render("restream.ejs", {
+              raceId,
+              players: [],
+              scenes: [],
+              raceState: raceRow.state,
+            });
+          }
+
+          const enrichedPlayers = [];
+
+          for (let i = 0; i < trackerRows.length; i++) {
+            const row = trackerRows[i];
+            const backendName = row.backend_name;
+            const displayName = row.display_name || backendName;
+
+            const obsSourceName = `Player${i + 1}`;
+
+            await new Promise((resolve) => {
+              playersDb.get(
+                `SELECT twitch_name FROM library_players WHERE internal_name = ?`,
+                [backendName],
+                (err, libRow) => {
+                  if (err) {
+                    console.error(err);
+                    enrichedPlayers.push({
+                      playerKey: `player${i + 1}`,
+                      backend_name: backendName,
+                      display_name: displayName,
+                      twitch_name: null,
+                      obs_source_name: obsSourceName,
+                    });
+                    return resolve();
+                  }
+
+                  enrichedPlayers.push({
+                    playerKey: `player${i + 1}`,
+                    backend_name: backendName,
+                    display_name: displayName,
+                    twitch_name: libRow ? libRow.twitch_name : null,
+                    obs_source_name: obsSourceName,
+                  });
+                  resolve();
+                }
+              );
+            });
+          }
+
+          const dynamicSourceMap = {};
+          enrichedPlayers.forEach((p, i) => {
+            dynamicSourceMap[`player${i + 1}`] = p.obs_source_name;
+          });
+
+          saveMapping(raceId, dynamicSourceMap);
+
+          playersDb.close();
+          trackerDb.close();
+
+          let scenes = [];
+          try {
+            await obs.connect("ws://127.0.0.1:4455");
+            const result = await obs.call("GetSceneList");
+            scenes = result.scenes.map((scene) => scene.sceneName);
+            obs.disconnect();
+          } catch (e) {
+            console.error("Could not fetch scenes from OBS:", e.message);
+          }
+
+          res.render("restream.ejs", {
+            raceId,
+            players: enrichedPlayers,
+            scenes,
+            raceState: raceRow.state,
+          });
+        }
+      );
     }
   );
 });
+
 
 
 obsRouter.post("/adjust-volume", (req, res) => {
