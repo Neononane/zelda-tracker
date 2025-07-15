@@ -433,25 +433,44 @@ app.delete('/api/race/:raceId', (req, res) => {
 //update the races
 app.patch('/api/race/:raceId', (req, res) => {
   const raceId = req.params.raceId;
-  const { name, state, racers, twitchChannel } = req.body;
+  const updates = [];
+  const values = [];
 
-  if (!name || !state || !Array.isArray(racers)) {
-    return res.status(400).send("Invalid payload");
+  if ("name" in req.body) {
+    updates.push("name = ?");
+    values.push(req.body.name);
   }
 
-  // Step 1: update race name, state, and twitch_channel
-  db.run(
-    `UPDATE races
-     SET name = ?, state = ?, twitch_channel = ?
-     WHERE race_id = ?`,
-    [name, state, twitchChannel || null, raceId],
-    function(err) {
-      if (err) {
-        console.error(err);
-        return res.status(500).send("Error updating race");
-      }
+  if ("state" in req.body) {
+    updates.push("state = ?");
+    values.push(req.body.state);
+  }
 
-      // Step 2: delete old players for this race
+  if ("twitchChannel" in req.body) {
+    updates.push("twitch_channel = ?");
+    values.push(req.body.twitchChannel || null);
+  }
+
+  if (updates.length === 0) {
+    return res.status(400).send("No valid fields to update.");
+  }
+
+  const sql = `
+    UPDATE races
+    SET ${updates.join(", ")}
+    WHERE race_id = ?
+  `;
+
+  values.push(raceId);
+
+  db.run(sql, values, function(err) {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Error updating race");
+    }
+
+    // Only replace players if racers array provided
+    if (Array.isArray(req.body.racers)) {
       db.run(
         `DELETE FROM players WHERE race_id = ?`,
         [raceId],
@@ -461,9 +480,8 @@ app.patch('/api/race/:raceId', (req, res) => {
             return res.status(500).send("Error clearing old players");
           }
 
-          // Step 3: re-insert new players
-          if (racers.length > 0) {
-            racers.forEach(internalName => {
+          if (req.body.racers.length > 0) {
+            req.body.racers.forEach(internalName => {
               playersDb.get(
                 `SELECT * FROM library_players WHERE internal_name = ?`,
                 [internalName],
@@ -501,9 +519,13 @@ app.patch('/api/race/:raceId', (req, res) => {
           res.sendStatus(200);
         }
       );
+    } else {
+      io.emit('admin:racesUpdated');
+      res.sendStatus(200);
     }
-  );
+  });
 });
+
 
 
 
