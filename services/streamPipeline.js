@@ -2,6 +2,8 @@ const { spawn } = require("child_process");
 const util = require("util");
 const execAsync = util.promisify(require("child_process").exec);
 const { startDiscord, stopDiscord } = require("./discord-control.js");
+const maxRetries = 5;
+const retryDelay = 2000;
 
 const OBSWebSocket = require("obs-websocket-js").default;
 
