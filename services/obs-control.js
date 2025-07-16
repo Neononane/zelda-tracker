@@ -1,3 +1,5 @@
+
+const { execSync } = require("child_process");
 const OBSWebSocket = require("obs-websocket-js").default;
 
 async function stopOBS() {
@@ -24,7 +26,7 @@ async function stopOBS() {
     } else {
       console.log("Virtual cam was not running.");
     }
-
+    execSync(`pkill streamlink`);
     await obs.disconnect();
     console.log("✅ OBS shutdown complete.");
   } catch (err) {

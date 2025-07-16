@@ -26,6 +26,7 @@ async function stopStreamlink() {
         } else {
             console.error("Failed to kill streamlink:", err);
         }
+        execSync(`pkill streamlink`);
         }
 
       console.log(`✅ Killed streamlink process ${pid}`);
