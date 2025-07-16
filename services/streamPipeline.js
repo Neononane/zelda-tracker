@@ -86,7 +86,7 @@ async function runStreamPipeline(player1, player2) {
   await sleep(5 * 1000);
 
   launchOBS();
-  await sleep(10 * 1000);
+  await sleep(15 * 1000);
 
   console.log("🚀 Setting video settings in OBS...");
   await setOBSVideoSettings();
