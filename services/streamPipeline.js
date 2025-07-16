@@ -40,6 +40,7 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 async function connectToOBS(retries = maxRetries) {
+  const obs = new OBSWebSocket();
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       console.log(`Attempting to connect to OBS WebSocket (Attempt ${attempt}/${retries})...`);
