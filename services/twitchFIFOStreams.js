@@ -53,6 +53,14 @@ function startStreamToFIFO(twitchName, fifoPath) {
 
   const writeStream = fs.createWriteStream(fifoPath);
 
+  writeStream.on("error", (err) => {
+    if (err.code === "EPIPE") {
+      console.warn(`[${twitchName}] FIFO write error: Broken pipe (EPIPE).`);
+    } else {
+      console.error(`[${twitchName}] WriteStream error:`, err);
+    }
+  });
+
   streamlink.stdout.pipe(writeStream);
 
   streamlink.stderr.on("data", (data) => {
