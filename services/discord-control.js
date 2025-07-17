@@ -4,6 +4,16 @@ const { execSync } = require('child_process');
 
 const PID_FILE = './chromium.pid';
 
+function waitForSource(name, timeoutMs = 3000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const output = execSync('pactl list short sources').toString();
+    if (output.includes(name)) return true;
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100); // sleep 100ms
+  }
+  return false;
+}
+
 async function startDiscord() {
   try {
     execSync('pactl load-module module-null-sink sink_name=discord_sink', {
@@ -13,12 +23,23 @@ async function startDiscord() {
   } catch (e) {
     console.log("Could not load virtual sink:", e.message);
   }
+
   try {
+    execSync('pactl load-module module-virtual-source source_name=discord_mic master=obs_mix_out.monitor');
+    console.log("Virtual mic (discord_mic) loaded.");
+  } catch (e) {
+    if (e.message.include("Module initialization failed")) {
+        console.log("Virtual mic already loaded.");
+    }   else {
+        console.error("Failed to load discord_mic:", e.message);
+    }
+  }
+  if(waitForSource('discord_mic')) {
     execSync('pactl set-default-source discord_mic');
     execSync('pactl set-source-mute discord_mic 0');
     console.log("Set default input to discord_mic and unmuted");
-  } catch (e) {
-    console.log("Could not set discord_mic as input", e.message);
+  } else {
+    console.log("Discord mic not found in time");
   }
 
   const browser = await puppeteer.launch({
