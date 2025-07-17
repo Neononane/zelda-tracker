@@ -60,7 +60,7 @@ async function setupAudioRouting() {
 
 async function startDiscord() {
   
-   ensurePulseAudioHeadless();
+   await ensurePulseAudioHeadless();
   
 
   const browser = await puppeteer.launch({
