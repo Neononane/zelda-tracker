@@ -28,7 +28,7 @@ async function startDiscord() {
     execSync('pactl load-module module-virtual-source source_name=discord_mic master=obs_mix_out.monitor');
     console.log("Virtual mic (discord_mic) loaded.");
   } catch (e) {
-    if (e.message.include("Module initialization failed")) {
+    if (e.message.includes("Module initialization failed")) {
         console.log("Virtual mic already loaded.");
     }   else {
         console.error("Failed to load discord_mic:", e.message);
