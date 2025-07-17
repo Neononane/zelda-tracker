@@ -18,7 +18,7 @@ async function startDiscord() {
     env: {
       ...process.env,
       PULSE_SINK: 'discord_sink',
-      PULSE_SOURCE: 'discord_mic'
+      PULSE_SOURCE: 'discord_sink.monitor'
     },
     args: [
       '--no-sandbox',
