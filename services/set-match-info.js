@@ -22,7 +22,7 @@ async function updateTextSource() {
       try {
         await obs.call("SetInputSettings", {
           inputName: sourceName,
-          inputSettings: { text: newText },
+          inputSettings: { text: newText, font: 'Pixel Emulator' },
           overlay: false,
         });
         console.log(`✅ Updated text in scene "${sceneName}".`);
