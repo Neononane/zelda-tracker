@@ -1,6 +1,5 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
-const { execSync, exec } = require('child_process');
 const { ensurePulseAudioHeadless } = require('./audio-setup');
 
 
