@@ -71,19 +71,10 @@ async function connectToOBS(retries = maxRetries) {
   }
 }
 
-function launchOBS() {
+async function launchOBS() {
   console.log("🚀 Launching OBS...");
 
-  const obsProcess = spawn(
-    "obs",
-    ["--multi", "--obs-port=4455",],
-    {
-      detached: true,
-      stdio: "ignore"
-    }
-  );
-
-  obsProcess.unref();
+  await execAsync(`node ./services/launchOBSwithAudio.js`);
 }
 
 function startXvfb() {
@@ -121,7 +112,7 @@ async function runStreamPipeline(player1, player2, raceName) {
   startXvfb();
   await sleep(5 * 1000);
 
-  launchOBS();
+  await launchOBS();
   console.log("Awaiting 10 seconds for all settings to take hold..");
   await sleep(10 * 1000);
 

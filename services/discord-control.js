@@ -7,55 +7,6 @@ const PID_FILE = './chromium.pid';
 
 const { execSync } = require("child_process");
 
-async function setupAudioRouting() {
-  try {
-    execSync('pulseaudio --check || pulseaudio --start');
-    console.log('✅ PulseAudio session started or already running.');
-  } catch (err) {
-    console.error('❌ Failed to start PulseAudio:', err.message);
-  }
-
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
-  function loadOrReuseModule(command, checkText) {
-    try {
-      const result = execSync('pactl list short modules').toString();
-      const exists = result.split('\n').some(line => line.includes(checkText));
-      if (!exists) {
-        const moduleId = execSync(command).toString().trim();
-        console.log(`✅ Loaded module: ${checkText} (ID ${moduleId})`);
-      } else {
-        console.log(`ℹ️ Module ${checkText} already loaded.`);
-      }
-    } catch (err) {
-      console.error(`❌ Failed to load module ${checkText}:`, err.message);
-    }
-  }
-
-  loadOrReuseModule(
-    'pactl load-module module-null-sink sink_name=obs_mix_out',
-    'obs_mix_out'
-  );
-
-  loadOrReuseModule(
-    'pactl load-module module-virtual-source source_name=discord_mic master=obs_mix_out.monitor',
-    'discord_mic'
-  );
-
-  try {
-    execSync('pactl set-default-source discord_mic');
-    execSync('pactl set-source-mute discord_mic 0');
-    console.log('✅ Set discord_mic as default input and unmuted.');
-  } catch (err) {
-    console.error('❌ Failed to set discord_mic as default source:', err.message);
-  }
-
-  loadOrReuseModule(
-    'pactl load-module module-null-sink sink_name=discord_sink',
-    'discord_sink'
-  );
-}
-
 
 async function startDiscord() {
   
@@ -66,7 +17,8 @@ async function startDiscord() {
     headless: false,
     env: {
       ...process.env,
-      PULSE_SINK: 'discord_sink'
+      PULSE_SINK: 'discord_sink',
+      PULSE_SOURCE: 'discord_mic'
     },
     args: [
       '--no-sandbox',
