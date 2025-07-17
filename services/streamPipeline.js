@@ -76,7 +76,7 @@ function launchOBS() {
 
   const obsProcess = spawn(
     "obs",
-    ["--multi", "--obs-port=4455", "--startvirtualcam"],
+    ["--multi", "--obs-port=4455", "--disable-shutdown-check", "--disable-missing-files-check"],
     {
       detached: true,
       stdio: "ignore"
