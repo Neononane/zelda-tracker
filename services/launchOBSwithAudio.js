@@ -1,4 +1,5 @@
 const { execSync, spawn } = require("child_process");
+const fs = require("fs");
 
 function runCommand(command) {
   try {
@@ -54,12 +55,33 @@ function waitForSinkMonitor(timeoutSeconds = 5) {
   process.exit(1);
 }
 
+function getPulseRuntimePath() {
+  const uid = process.getuid();
+  return `/run/user/${uid}/pulse`;
+}
+
 function launchOBS() {
-  console.log("🚀 Launching OBS...");
-  const obs = spawn("obs", ["--multi", "--obs-port=4455"], {
-    detached: true,
-    stdio: "ignore",
-  });
+  const pulsePath = getPulseRuntimePath();
+  if (!fs.existsSync(`${pulsePath}/native`)) {
+    console.error("❌ PulseAudio native socket not found. PulseAudio may not be running.");
+    process.exit(1);
+  }
+
+  console.log("🚀 Launching OBS with PulseAudio integration...");
+  const obs = spawn(
+    "env",
+    [
+      `PULSE_RUNTIME_PATH=${pulsePath}`,
+      "obs",
+      "--multi",
+      "--obs-port=4455"
+    ],
+    {
+      detached: true,
+      stdio: "ignore",
+      shell: true
+    }
+  );
   obs.unref();
 }
 
