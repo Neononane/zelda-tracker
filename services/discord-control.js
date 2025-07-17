@@ -1,6 +1,8 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const { execSync, exec } = require('child_process');
+const { ensurePulseAudioHeadless } = require('./audio-setup');
+
 
 const PID_FILE = './chromium.pid';
 
@@ -58,7 +60,7 @@ async function setupAudioRouting() {
 
 async function startDiscord() {
   
-   await setupAudioRouting();
+   ensurePulseAudioHeadless();
   
 
   const browser = await puppeteer.launch({
