@@ -75,6 +75,15 @@ async function ensurePulseAudioHeadless() {
   } catch (err) {
     console.error("❌ Failed to set defaults:", err.message);
   }
+
+  // Step 6: Loop obs_mix_out.monitor to discord_sink
+    try {
+    execSync("pactl load-module module-loopback source=obs_mix_out.monitor sink=discord_sink latency_msec=20", { env: process.env });
+    console.log("✅ Loopback from obs_mix_out.monitor to discord_sink established.");
+    } catch (err) {
+    console.error("❌ Failed to create loopback to discord_sink:", err.message);
+    }
+
 }
 
 module.exports = {
