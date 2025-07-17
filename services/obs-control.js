@@ -26,7 +26,7 @@ async function stopOBS() {
     } else {
       console.log("Virtual cam was not running.");
     }
-    execSync(`pkill streamlink`);
+    //execSync(`pkill streamlink`);
     await obs.disconnect();
     console.log("✅ OBS shutdown complete.");
   } catch (err) {

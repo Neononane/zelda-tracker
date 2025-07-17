@@ -122,7 +122,7 @@ async function runStreamPipeline(player1, player2) {
   await sleep(5 * 1000);
 
   launchOBS();
-  console.log("Awaiting 60 secibd for all settings to take hold..");
+  console.log("Awaiting 60 seconds for all settings to take hold..");
   await sleep(60 * 1000);
 
   console.log("🚀 Setting video settings in OBS...");
