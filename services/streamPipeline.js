@@ -114,7 +114,7 @@ function startTwitchFIFOStreams(player1, player2) {
   child.unref();
 }
 
-async function runStreamPipeline(player1, player2) {
+async function runStreamPipeline(player1, player2, raceName) {
   startTwitchFIFOStreams(player1, player2);
   await sleep(15 * 1000);
 
@@ -122,8 +122,8 @@ async function runStreamPipeline(player1, player2) {
   await sleep(5 * 1000);
 
   launchOBS();
-  console.log("Awaiting 60 seconds for all settings to take hold..");
-  await sleep(60 * 1000);
+  console.log("Awaiting 10 seconds for all settings to take hold..");
+  await sleep(10 * 1000);
 
   console.log("🚀 Setting video settings in OBS...");
   await setOBSVideoSettings();
@@ -144,6 +144,10 @@ async function runStreamPipeline(player1, player2) {
 
   console.log("🚀 Switching scene to Intro...");
   await execAsync(`node ./services/switch-scene.js Intro`);
+  await sleep(5 * 1000);
+
+  console.log("🚀 Updating race title...");
+  await execAsync(`node ./services/set-match-info.js "${raceName}"`);
   await sleep(5 * 1000);
 
   console.log("🚀 Starting Virtual Camera...");
