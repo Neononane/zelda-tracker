@@ -27,23 +27,15 @@ async function stopOBS() {
       console.log("Virtual cam was not running.");
     }
 
-    // Request graceful shutdown of OBS
-    console.log("Closing OBS...");
-    await obs.call("Shutdown");
-    console.log("✅ OBS shutdown requested.");
+    await obs.disconnect();
+    console.log("✅ Disconnected from OBS WebSocket.");
 
-    // Give it a few seconds to exit gracefully
-    setTimeout(() => {
-      try {
-        console.warn("⏱ Checking if OBS is still running... attempting pkill as fallback.");
-        execSync("pkill obs || true");
-        console.log("✅ pkill fallback executed.");
-      } catch (pkillErr) {
-        console.error("⚠️ pkill fallback failed:", pkillErr.message);
-      }
-    }, 5000);
+    // 🔁 Use pkill as the official replacement for Shutdown
+    console.log("Attempting fallback OBS termination (pkill)...");
+    execSync("pkill obs || true");
+    console.log("✅ Fallback OBS termination complete.");
   } catch (err) {
-    console.error("Failed to shut down OBS:", err);
+    console.error("❌ Error during stopOBS:", err);
     throw err;
   }
 }
