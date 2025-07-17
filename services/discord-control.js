@@ -13,6 +13,13 @@ async function startDiscord() {
   } catch (e) {
     console.log("Could not load virtual sink:", e.message);
   }
+  try {
+    execSync('pactl set-default-source discord_mic');
+    execSync('pactl set-source-mute discord_mic 0');
+    console.log("Set default input to discord_mic and unmuted");
+  } catch (e) {
+    console.log("Could not set discord_mic as input", e.message);
+  }
 
   const browser = await puppeteer.launch({
     headless: false,
