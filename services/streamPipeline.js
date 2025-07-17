@@ -133,8 +133,20 @@ async function runStreamPipeline(player1, player2, raceName) {
   await execAsync(`node ./services/switch-audio.js Player1`);
   await sleep(5 * 1000);
 
+  console.log("🚀 Enabling microphone...");
+  await execAsync(`node ./services/toggleMic.js Scene true`);
+  await sleep(5 * 1000);
+
   console.log("🚀 Switching scene to Intro...");
   await execAsync(`node ./services/switch-scene.js Intro`);
+  await sleep(5 * 1000);
+
+  console.log("🚀 Disabling intro microphone...");
+  await execAsync(`node ./services/toggleMic.js Intro false`);
+  await sleep(5 * 1000);
+
+  console.log("🚀 Disabling outro microphone...");
+  await execAsync(`node ./services/toggleMic.js Outro false`);
   await sleep(5 * 1000);
 
   console.log("🚀 Updating race title...");
