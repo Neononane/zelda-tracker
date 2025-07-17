@@ -5,6 +5,7 @@ const path = require("path");
 const OBSWebSocket = require("obs-websocket-js").default;
 const obs = new OBSWebSocket();
 const { getMapping } = require("../lib/obsMappings");
+const execAsync = util.promisify(require("child_process").exec);
 
 const router = express.Router();
 
@@ -227,6 +228,8 @@ router.post('/go-live', async (req, res) => {
     await obs.call('TriggerStudioModeTransition');
 
     await obs.disconnect();
+    console.log("🚀 Enabling microphone...");
+    await execAsync(`node ./services/toggleGlobalAudio.js "Mic/Aux 2" false`);
     res.json({ success: true });
   } catch (err) {
     console.error('Error triggering Studio Mode transition:', err);
