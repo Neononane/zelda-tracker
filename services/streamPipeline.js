@@ -4,6 +4,7 @@ const execAsync = util.promisify(require("child_process").exec);
 const { startDiscord, stopDiscord } = require("./discord-control.js");
 const maxRetries = 5;
 const retryDelay = 2000;
+const { ensurePulseAudioHeadless } = require('./audio-setup');
 
 const OBSWebSocket = require("obs-websocket-js").default;
 
@@ -106,6 +107,10 @@ function startTwitchFIFOStreams(player1, player2) {
 }
 
 async function runStreamPipeline(player1, player2, raceName) {
+  await ensurePulseAudioHeadless();
+  console.log("🚀 Setting audio settings on server...");
+  await sleep(1 * 1000);
+  
   startTwitchFIFOStreams(player1, player2);
   await sleep(15 * 1000);
 

@@ -10,7 +10,7 @@ const { execSync } = require("child_process");
 
 async function startDiscord() {
   
-   await ensurePulseAudioHeadless();
+   //await ensurePulseAudioHeadless();
   
 
   const browser = await puppeteer.launch({

@@ -91,6 +91,8 @@ async function ensurePulseAudioHeadless() {
   try {
     execSync("pactl set-default-source discord_mic", { env: process.env });
     console.log("✅ Set default source to discord_mic.");
+    execSync("pactl set-default-sink obs_mix_out", { env: process.env });
+    console.log("✅ Set default sink to obs_mix_out.");
   } catch (err) {
     console.error("❌ Failed to set default source:", err.message);
   }

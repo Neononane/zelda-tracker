@@ -10,48 +10,38 @@ function runCommand(command) {
   }
 }
 
-function ensurePulseAudioRunning() {
-  const status = runCommand("pulseaudio --check");
-  if (status === null) {
-    console.log("Starting PulseAudio...");
-    runCommand("pulseaudio --start");
-  } else {
-    console.log("PulseAudio already running.");
-  }
-}
-
-function ensureDiscordSinkExists() {
+function ensureSinkExists(name, description) {
   const sinks = runCommand("pactl list short sinks") || "";
-  if (!sinks.includes("discord_sink")) {
-    console.log("Creating discord_sink...");
-    runCommand("pactl load-module module-null-sink sink_name=discord_sink sink_properties=device.description=discord_sink");
+  if (!sinks.includes(name)) {
+    console.log(`Creating ${name}...`);
+    runCommand(`pactl load-module module-null-sink sink_name=${name} sink_properties=device.description=${description}`);
   } else {
-    console.log("discord_sink already exists.");
+    console.log(`${name} already exists.`);
   }
 }
 
-function ensureDiscordMicExists() {
+function ensureRemapSourceExists(sourceName, master) {
   const sources = runCommand("pactl list short sources") || "";
-  if (!sources.includes("discord_mic")) {
-    console.log("Creating discord_mic...");
-    runCommand("pactl load-module module-remap-source master=discord_sink.monitor source_name=discord_mic");
+  if (!sources.includes(sourceName)) {
+    console.log(`Creating ${sourceName}...`);
+    runCommand(`pactl load-module module-remap-source master=${master} source_name=${sourceName}`);
   } else {
-    console.log("discord_mic already exists.");
+    console.log(`${sourceName} already exists.`);
   }
 }
 
-function waitForSinkMonitor(timeoutSeconds = 5) {
+function waitForMonitor(name, timeoutSeconds = 5) {
   const start = Date.now();
   while ((Date.now() - start) / 1000 < timeoutSeconds) {
     const sources = runCommand("pactl list short sources") || "";
-    if (sources.includes("discord_sink.monitor")) {
-      console.log("✅ discord_sink.monitor is ready.");
+    if (sources.includes(name)) {
+      console.log(`✅ ${name} is ready.`);
       return true;
     }
-    console.log("⏳ Waiting for discord_sink.monitor...");
-    require("child_process").execSync("sleep 0.5");
+    console.log(`⏳ Waiting for ${name}...`);
+    execSync("sleep 0.5");
   }
-  console.error("❌ discord_sink.monitor did not become ready in time.");
+  console.error(`❌ ${name} did not become ready in time.`);
   process.exit(1);
 }
 
@@ -72,6 +62,7 @@ function launchOBS() {
     "env",
     [
       `PULSE_RUNTIME_PATH=${pulsePath}`,
+      `PULSE_SINK=obs_mix_out`,
       "obs",
       "--multi",
       "--obs-port=4455"
@@ -86,10 +77,10 @@ function launchOBS() {
 }
 
 function main() {
-  ensurePulseAudioRunning();
-  ensureDiscordSinkExists();
-  ensureDiscordMicExists();
-  waitForSinkMonitor();
+  ensureSinkExists("obs_mix_out", "obs_mix_out");
+  ensureSinkExists("discord_sink", "discord_sink");
+  ensureRemapSourceExists("discord_mic", "discord_sink.monitor");
+  waitForMonitor("discord_sink.monitor");
   launchOBS();
 }
 
