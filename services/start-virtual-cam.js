@@ -19,7 +19,7 @@ async function startVirtualCam() {
     }
 
     // Wait until VirtualCam is confirmed active
-    let retries = 10;
+    let retries = 60;
     let delayMs = 1000;
 
     while (retries > 0) {
