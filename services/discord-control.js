@@ -1,6 +1,6 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
-const { execSync } = require('child_process');
+const { execSync, exec } = require('child_process');
 
 const PID_FILE = './chromium.pid';
 
@@ -14,33 +14,48 @@ function waitForSource(name, timeoutMs = 3000) {
   return false;
 }
 
-async function startDiscord() {
-  try {
-    execSync('pactl load-module module-null-sink sink_name=discord_sink', {
-      stdio: 'ignore'
-    });
-    console.log("Virtual sink created or already exists.");
-  } catch (e) {
-    console.log("Could not load virtual sink:", e.message);
-  }
-
-  try {
-    execSync('pactl load-module module-virtual-source source_name=discord_mic master=obs_mix_out.monitor');
-    console.log("Virtual mic (discord_mic) loaded.");
-  } catch (e) {
-    if (e.message.includes("Module initialization failed")) {
-        console.log("Virtual mic already loaded.");
-    }   else {
-        console.error("Failed to load discord_mic:", e.message);
+function loadOrReuseModule(command, checkText) {
+    try {
+        const result = execSync('pactl list short modules').toString();
+        const exists = result.split('\n').some(line => line.includes(checkText));
+        if (!exists) {
+            const moduleId = execSync(command).toString().trim();
+            console.log(`Loaded module: ${checkText} (ID ${moduleID})`);
+        } else {
+            console.log(`Module ${checkText} already loaded.`);
+        }
+    } catch (err) {
+        console.error(`Failed to load module ${checkText}:`, err.message);
     }
-  }
-  if(waitForSource('discord_mic')) {
-    execSync('pactl set-default-source discord_mic');
-    execSync('pactl set-source-mute discord_mic 0');
-    console.log("Set default input to discord_mic and unmuted");
-  } else {
-    console.log("Discord mic not found in time");
-  }
+}
+
+function setupAudioRouting() {
+    loadOrReuseModule(
+        'pactl load-module module-null-sink sink_name=obs_mix_out',
+        'obs_mix_out'
+    );
+
+    loadOrReuseModule(
+        'pactl load-module module-virtual-source source_name=discord_mic master=obs_mix_out.monitor',
+        'discord_mic'
+    );
+    try {
+        execSync('pactl set-default-source discord_mic');
+        execSync('pactl set-source-mute discord_mic 0');
+        console.log("Set default input to discord_mic and unmuted");
+    } catch (err) {
+        console.log("Discord mic not found in time");
+    }
+    loadOrReuseModule(
+        'pactl load-module module-null-sink sink_name=discord_sink',
+        'discord_sink'
+    );
+}
+
+async function startDiscord() {
+  
+    setupAudioRouting();
+  
 
   const browser = await puppeteer.launch({
     headless: false,
