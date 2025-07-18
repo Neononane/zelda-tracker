@@ -6,7 +6,7 @@ function getPulseRuntimePath() {
   return `/run/user/${uid}/pulse`;
 }
 
-function waitForOBSWindow(maxAttempts = 20) {
+function waitForOBSWindow(maxAttempts = 30) {
   const displayEnv = { DISPLAY: ":98" };
 
   for (let i = 0; i < maxAttempts; i++) {
