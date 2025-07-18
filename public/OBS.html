@@ -32,6 +32,12 @@
     .source-item {
       margin: 5px 0;
     }
+    .muted {
+      color: red;
+    }
+    .unmuted {
+      color: greenyellow;
+    }
   </style>
 </head>
 <body>
@@ -84,12 +90,35 @@
     async function loadSceneSources() {
       const scene = sceneSelect.value;
       const data = await fetchJSON(`/api/troubleshoot/scene-sources?scene=${encodeURIComponent(scene)}`);
-      sourceList.innerHTML = data.sources.map(s => `
-        <div class="source-item">
-          ${s.name} 
-          <button onclick="muteSource('${s.name}', true)">Mute</button>
-          <button onclick="muteSource('${s.name}', false)">Unmute</button>
-        </div>`).join('');
+
+      sourceList.innerHTML = '';
+      audioControls.innerHTML = '';
+
+      for (const source of data.sources) {
+        const row = document.createElement('div');
+        row.className = 'source-item';
+
+        const label = document.createElement('span');
+        label.innerText = `${source.name} (${source.inputKind || 'unknown'})`;
+        if (source.muted !== null) {
+          label.classList.add(source.muted ? 'muted' : 'unmuted');
+        }
+
+        row.appendChild(label);
+
+        if (source.muted !== null) {
+          const muteBtn = document.createElement('button');
+          muteBtn.innerText = source.muted ? 'Unmute' : 'Mute';
+          muteBtn.onclick = async () => {
+            await muteSource(source.name, !source.muted);
+            await loadSceneSources();
+          };
+          row.appendChild(muteBtn);
+          audioControls.appendChild(row.cloneNode(true));
+        }
+
+        sourceList.appendChild(row);
+      }
     }
 
     async function muteSource(name, mute) {

@@ -9,7 +9,7 @@ let connected = false;
 
 async function ensureConnection() {
   if (!connected) {
-    await obs.connect(`${process.env.OBS_ADDRESS}`, process.env.OBS_PASSWORD);
+    await obs.connect(process.env.OBS_ADDRESS, process.env.OBS_PASSWORD);
     connected = true;
   }
 }
@@ -25,14 +25,30 @@ router.get('/scenes', async (req, res) => {
   }
 });
 
-// Get list of sources in a scene
+// Get list of sources in a scene, including mute state if audio
 router.get('/scene-sources', async (req, res) => {
   try {
     const sceneName = req.query.scene;
     if (!sceneName) return res.status(400).json({ error: 'Missing scene parameter' });
     await ensureConnection();
+
     const { sceneItems } = await obs.call('GetSceneItemList', { sceneName });
-    res.json({ sources: sceneItems.map(i => ({ name: i.sourceName })) });
+    const audioKinds = ['ffmpeg_source', 'wasapi_input_capture', 'wasapi_output_capture', 'pulse_input', 'pulse_output'];
+
+    const sources = [];
+    for (const item of sceneItems) {
+      const { inputKind } = await obs.call('GetInputSettings', { inputName: item.sourceName }).catch(() => ({ inputKind: null }));
+      let muted = null;
+      if (audioKinds.includes(inputKind)) {
+        try {
+          const { inputMuted } = await obs.call('GetInputMute', { inputName: item.sourceName });
+          muted = inputMuted;
+        } catch (e) { /* skip */ }
+      }
+      sources.push({ name: item.sourceName, inputKind, muted });
+    }
+
+    res.json({ sources });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
