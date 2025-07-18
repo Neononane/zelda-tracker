@@ -5,6 +5,8 @@ const { startDiscord, stopDiscord } = require("./discord-control.js");
 const maxRetries = 5;
 const retryDelay = 2000;
 const { ensurePulseAudioHeadless } = require('./audio-setup');
+const path = require("path");
+const os = require("os");
 
 const OBSWebSocket = require("obs-websocket-js").default;
 
@@ -79,16 +81,41 @@ async function launchOBS() {
 }
 
 function startXvfb() {
-  console.log("🚀 Launching Xvfb...");
+  console.log("🚀 Launching Xvfb on :98...");
 
-  const xvfb = spawn(
-    "Xvfb",
-    [":98", "-screen", "0", "1920x1080x24", "-ac"],
-    { detached: true, stdio: "ignore" }
-  );
+  const xvfb = spawn("Xvfb", [":98", "-screen", "0", "1920x1080x24", "-ac"], {
+    detached: true,
+    stdio: "ignore"
+  });
   xvfb.unref();
 
   process.env.DISPLAY = ":98";
+
+  console.log("🎛️  Starting openbox window manager...");
+  const openbox = spawn("openbox", [], {
+    env: process.env,
+    detached: true,
+    stdio: "ignore"
+  });
+  openbox.unref();
+
+  const vncPasswordFile = path.join(os.homedir(), ".vnc", "passwd");
+
+  console.log("🖥️  Starting x11vnc server with password...");
+  const vnc = spawn("x11vnc", [
+    "-display", ":98",
+    "-rfbauth", vncPasswordFile,
+    "-forever",
+    "-shared",
+    "-rfbport", "5900"
+  ], {
+    env: process.env,
+    detached: true,
+    stdio: "ignore"
+  });
+  vnc.unref();
+
+  console.log("✅ Xvfb, openbox, and x11vnc are running on DISPLAY=:98 (VNC on port 5900)");
 }
 
 function startTwitchFIFOStreams(player1, player2) {
