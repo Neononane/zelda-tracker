@@ -87,6 +87,10 @@ async function startDiscord() {
         console.log("Could not find Turn On Camera button.");
         await page.screenshot({ path: 'no_video_button.png' });
       }
+      await page.click('button[aria-label="User Settings"]');
+        await page.click('div:has-text("Voice & Video")');
+        await page.select('#input-device-dropdown', 'Remapped Monitor of discord_sink');
+
     } else {
       console.log("No Join Voice button found!");
       await page.screenshot({ path: 'no_join_button.png' });
