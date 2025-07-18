@@ -40,15 +40,20 @@ async function startDiscord() {
 
   try {
     await page.goto('https://discord.com/login', {
-      waitUntil: 'domcontentloaded',
-      timeout: 60000
+        waitUntil: 'domcontentloaded',
+        timeout: 60000
     });
+
+    // Wait for the email field to appear
+    await page.waitForSelector('input[name="email"]', { timeout: 60000 });
 
     await page.type('input[name="email"]', process.env.DISCORD_USERNAME);
     await page.type('input[name="password"]', process.env.DISCORD_PASSWORD);
 
-    await page.click('button[type="submit"]');
-    await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 });
+    await Promise.all([
+        page.click('button[type="submit"]'),
+        page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 }),
+    ]);
     console.log("✅ Logged in.");
 
     await page.goto('https://discord.com/channels/1384629482610102473/1384629483205820541', {

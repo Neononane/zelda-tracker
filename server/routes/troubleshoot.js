@@ -9,7 +9,7 @@ let connected = false;
 
 async function ensureConnection() {
   if (!connected) {
-    await obs.connect(`${process.env.OBS_ADDRESS || 'ws:\\127.0.0.1'}:${process.env.OBS_PORT || 4455}`, process.env.OBS_PASSWORD);
+    await obs.connect(`${process.env.OBS_ADDRESS}`, process.env.OBS_PASSWORD);
     connected = true;
   }
 }
