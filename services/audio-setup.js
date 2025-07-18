@@ -1,18 +1,20 @@
 const { execSync, spawnSync } = require("child_process");
 const fs = require("fs");
 
-const RUNTIME_DIR = "/tmp/pulse-runtime";
+const RUNTIME_DIR = `/run/user/${process.getuid()}`;
+const MAX_STARTUP_ATTEMPTS = 20;
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function ensurePulseAudioHeadless() {
-  if (!fs.existsSync(RUNTIME_DIR)) {
-    fs.mkdirSync(RUNTIME_DIR, { recursive: true });
-  }
+function exportRuntimeEnv() {
+  process.env.XDG_RUNTIME_DIR = RUNTIME_DIR;
+  process.env.PULSE_RUNTIME_PATH = `${RUNTIME_DIR}/pulse`;
+  process.env.DISPLAY = process.env.DISPLAY || ":98";
+}
 
-  // Step 1: Start DBus session
+function ensureDBusSession() {
   try {
     const dbusOutput = execSync("dbus-launch").toString();
     dbusOutput.split("\n").filter(line => line.includes("=")).forEach(line => {
@@ -22,12 +24,26 @@ async function ensurePulseAudioHeadless() {
     console.log("✅ DBus session started.");
   } catch (err) {
     console.error("❌ Failed to launch DBus:", err.message);
-    return;
+    return false;
+  }
+  return true;
+}
+
+function startPulseAudio() {
+  // Try killing existing (non-system-wide) PulseAudio
+  try {
+    execSync("pulseaudio --check && pulseaudio --kill", { env: process.env });
+    console.log("🔁 Restarted existing PulseAudio instance.");
+  } catch {
+    console.log("ℹ️ No existing PulseAudio to kill.");
   }
 
-  process.env.XDG_RUNTIME_DIR = RUNTIME_DIR;
+  // Ensure directory exists
+  if (!fs.existsSync(RUNTIME_DIR)) {
+    fs.mkdirSync(RUNTIME_DIR, { recursive: true });
+  }
 
-  // Step 2: Start PulseAudio
+  // Start clean
   spawnSync("pulseaudio", [
     "--daemonize=yes",
     "--exit-idle-time=-1",
@@ -37,21 +53,32 @@ async function ensurePulseAudioHeadless() {
     env: process.env,
     stdio: "ignore"
   });
-  console.log("🚀 PulseAudio launched in headless mode.");
 
-  // Step 3: Wait for it to be ready
-  for (let i = 0; i < 20; i++) {
+  console.log("🚀 PulseAudio launch attempted.");
+}
+
+async function waitForPulseAudioReady() {
+  for (let i = 0; i < MAX_STARTUP_ATTEMPTS; i++) {
     try {
-      execSync("pactl info", { env: process.env });
-      break;
+      const result = execSync("pactl info", { env: process.env }).toString();
+      if (result.includes("Server Name")) {
+        console.log("✅ PulseAudio is ready.");
+        return true;
+      }
     } catch {
-      await sleep(500);
+      // Silent retry
     }
+    await sleep(500);
   }
+  console.error("❌ Timeout waiting for PulseAudio.");
+  return false;
+}
 
-  console.log("✅ PulseAudio ready.");
+function moduleExists(name, listOutput) {
+  return listOutput.includes(name);
+}
 
-  // Step 4: Load core virtual devices
+function loadVirtualModules() {
   const virtualModules = [
     {
       check: "discord_sink",
@@ -67,40 +94,56 @@ async function ensurePulseAudioHeadless() {
     }
   ];
 
-  const shortSources = execSync("pactl list short sources", { env: process.env }).toString();
-  const shortSinks = execSync("pactl list short sinks", { env: process.env }).toString();
+  const allModules = execSync("pactl list short modules", { env: process.env }).toString();
+  const allSinks = execSync("pactl list short sinks", { env: process.env }).toString();
+  const allSources = execSync("pactl list short sources", { env: process.env }).toString();
 
   for (const { check, cmd } of virtualModules) {
-    const alreadyExists = shortSources.includes(check) || shortSinks.includes(check);
-    if (!alreadyExists) {
+    const exists = moduleExists(check, allModules) || moduleExists(check, allSinks) || moduleExists(check, allSources);
+    if (!exists) {
       execSync(cmd, { env: process.env });
       console.log(`✅ Loaded ${check}`);
     } else {
-      console.log(`✅ ${check} already loaded`);
+      console.log(`✅ ${check} already exists`);
     }
   }
+}
 
-  // Step 5: Set defaults
+function configureLoopback() {
+  const loadedModules = execSync("pactl list short modules", { env: process.env }).toString();
+  const loopbackAlreadyExists = loadedModules.includes("module-loopback") && loadedModules.includes("obs_mix_out.monitor");
+
+  if (!loopbackAlreadyExists) {
+    execSync("pactl load-module module-loopback source=obs_mix_out.monitor sink=discord_sink latency_msec=20", { env: process.env });
+    console.log("✅ Loopback from obs_mix_out.monitor to discord_sink established.");
+  } else {
+    console.log("✅ Loopback already configured.");
+  }
+}
+
+function setDefaults() {
   try {
     execSync("pactl set-default-source discord_mic", { env: process.env });
     execSync("pactl set-default-sink obs_mix_out", { env: process.env });
     console.log("✅ Default source → discord_mic | Default sink → obs_mix_out");
   } catch (err) {
-    console.error("❌ Failed to set defaults:", err.message);
+    console.error("❌ Failed to set default devices:", err.message);
   }
+}
 
-  // Step 6: Loop obs_mix_out.monitor to discord_sink
-  try {
-    const loopbacks = execSync("pactl list short modules", { env: process.env }).toString();
-    if (!loopbacks.includes("module-loopback") || !loopbacks.includes("obs_mix_out.monitor")) {
-      execSync("pactl load-module module-loopback source=obs_mix_out.monitor sink=discord_sink latency_msec=20", { env: process.env });
-      console.log("✅ Loopback from obs_mix_out.monitor to discord_sink established.");
-    } else {
-      console.log("✅ Loopback already configured.");
-    }
-  } catch (err) {
-    console.error("❌ Failed to create loopback to discord_sink:", err.message);
-  }
+async function ensurePulseAudioHeadless() {
+  exportRuntimeEnv();
+
+  if (!ensureDBusSession()) return;
+
+  startPulseAudio();
+
+  const ready = await waitForPulseAudioReady();
+  if (!ready) return;
+
+  loadVirtualModules();
+  setDefaults();
+  configureLoopback();
 }
 
 module.exports = {

@@ -181,7 +181,7 @@ async function runStreamPipeline(player1, player2, raceName) {
   await execAsync(`node ./services/start-virtual-cam.js`);
   await sleep(5 * 1000);
 
-  console.log("🚀 Starting Discord automation...");
+/*   console.log("🚀 Starting Discord automation...");
   try {
     await startDiscord();
     console.log("✅ Discord automation complete.");
@@ -190,7 +190,7 @@ async function runStreamPipeline(player1, player2, raceName) {
     console.log("Aborting pipeline!");
     return;
   }
-  await sleep(5 * 1000);
+  await sleep(5 * 1000); */
 
 
   // console.log("🚀 Starting OBS stream...");
