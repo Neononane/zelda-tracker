@@ -23,13 +23,18 @@ async function startDiscord() {
       PULSE_SOURCE: 'obs_mix_out.monitor'
     },
     args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--use-fake-ui-for-media-stream',
-      '--disable-features=IsolateOrigins,site-per-process'
-    ]
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--use-fake-ui-for-media-stream',
+        '--disable-features=IsolateOrigins,site-per-process',
+        '--enable-usermedia-screen-capturing',
+        '--allow-http-screen-capture',
+        '--auto-select-desktop-capture-source=Entire screen',
+        '--window-size=1920,1080',
+        '--start-maximized'
+        ]
   });
 
   const page = await browser.newPage();
