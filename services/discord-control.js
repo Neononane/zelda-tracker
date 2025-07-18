@@ -18,6 +18,7 @@ async function startDiscord() {
     headless: false, // Set to true only if you have everything working
     env: {
       ...process.env,
+      DISPLAY: ":98",
       PULSE_SINK: 'discord_sink',
       PULSE_SOURCE: 'obs_mix_out.monitor'
     },
