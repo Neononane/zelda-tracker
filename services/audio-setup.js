@@ -51,15 +51,28 @@ async function ensurePulseAudioHeadless() {
 
   console.log("✅ PulseAudio ready.");
 
-  // Step 4: Load modules
-  const modules = [
-    { check: "discord_sink", cmd: "pactl load-module module-null-sink sink_name=discord_sink" },
-    { check: "obs_mix_out", cmd: "pactl load-module module-null-sink sink_name=obs_mix_out" },
-    { check: "discord_mic", cmd: "pactl load-module module-remap-source master=discord_sink.monitor source_name=discord_mic" }
+  // Step 4: Load core virtual devices
+  const virtualModules = [
+    {
+      check: "discord_sink",
+      cmd: "pactl load-module module-null-sink sink_name=discord_sink sink_properties=device.description=DiscordSink"
+    },
+    {
+      check: "obs_mix_out",
+      cmd: "pactl load-module module-null-sink sink_name=obs_mix_out sink_properties=device.description=OBSMixOut"
+    },
+    {
+      check: "discord_mic",
+      cmd: "pactl load-module module-remap-source master=discord_sink.monitor source_name=discord_mic source_properties=device.description=DiscordMic"
+    }
   ];
 
-  for (const { check, cmd } of modules) {
-    if (!execSync("pactl list short").toString().includes(check)) {
+  const shortSources = execSync("pactl list short sources", { env: process.env }).toString();
+  const shortSinks = execSync("pactl list short sinks", { env: process.env }).toString();
+
+  for (const { check, cmd } of virtualModules) {
+    const alreadyExists = shortSources.includes(check) || shortSinks.includes(check);
+    if (!alreadyExists) {
       execSync(cmd, { env: process.env });
       console.log(`✅ Loaded ${check}`);
     } else {
@@ -77,13 +90,17 @@ async function ensurePulseAudioHeadless() {
   }
 
   // Step 6: Loop obs_mix_out.monitor to discord_sink
-    try {
-    execSync("pactl load-module module-loopback source=obs_mix_out.monitor sink=discord_sink latency_msec=20", { env: process.env });
-    console.log("✅ Loopback from obs_mix_out.monitor to discord_sink established.");
-    } catch (err) {
-    console.error("❌ Failed to create loopback to discord_sink:", err.message);
+  try {
+    const loopbacks = execSync("pactl list short modules", { env: process.env }).toString();
+    if (!loopbacks.includes("module-loopback") || !loopbacks.includes("obs_mix_out.monitor")) {
+      execSync("pactl load-module module-loopback source=obs_mix_out.monitor sink=discord_sink latency_msec=20", { env: process.env });
+      console.log("✅ Loopback from obs_mix_out.monitor to discord_sink established.");
+    } else {
+      console.log("✅ Loopback already configured.");
     }
-
+  } catch (err) {
+    console.error("❌ Failed to create loopback to discord_sink:", err.message);
+  }
 }
 
 module.exports = {

@@ -88,8 +88,28 @@ async function startDiscord() {
         await page.screenshot({ path: 'no_video_button.png' });
       }
       await page.click('button[aria-label="User Settings"]');
-        await page.click('div:has-text("Voice & Video")');
-        await page.select('#input-device-dropdown', 'Remapped Monitor of discord_sink');
+        await page.waitForTimeout(1000); // let the menu load
+
+        const voiceAndVideo = await page.$x("//div[contains(text(), 'Voice & Video')]");
+        if (voiceAndVideo.length) {
+        await voiceAndVideo[0].click();
+        await page.waitForTimeout(1000);
+        }
+
+        console.log("Opening input device dropdown...");
+        await page.click('div[role="combobox"]:has(div:has-text("Input Device"))');
+
+        console.log("Selecting 'Remapped Monitor of discord_sink'...");
+        const deviceOptions = await page.$$('div[role="option"]');
+        for (const option of deviceOptions) {
+        const text = await page.evaluate(el => el.textContent, option);
+        if (text.includes('Remapped Monitor of discord_sink')) {
+            await option.click();
+            console.log("Input device set.");
+            break;
+        }
+        }
+
 
     } else {
       console.log("No Join Voice button found!");
