@@ -4,7 +4,7 @@ const execAsync = util.promisify(require("child_process").exec);
 const { startDiscord, stopDiscord } = require("./discord-control.js");
 const maxRetries = 5;
 const retryDelay = 2000;
-const { ensurePulseAudioHeadless } = require('./audio-setup');
+const { ensurePulseAudioHeadless, ensurePipeWireAudio } = require('./audio-setup');
 const path = require("path");
 const os = require("os");
 
@@ -134,7 +134,7 @@ function startTwitchFIFOStreams(player1, player2) {
 }
 
 async function runStreamPipeline(player1, player2, raceName) {
-  await ensurePulseAudioHeadless();
+  await ensurePipeWireAudio();
   console.log("🚀 Setting audio settings on server...");
   await sleep(1 * 1000);
   
