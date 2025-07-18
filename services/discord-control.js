@@ -9,12 +9,13 @@ const { execSync } = require("child_process");
 
 
 async function startDiscord() {
-  
-   //await ensurePulseAudioHeadless();
-  
+  console.log("🚀 Starting Discord automation...");
+
+  // Optional: Start PulseAudio (uncomment if needed)
+  // await ensurePulseAudioHeadless();
 
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: false, // Set to true only if you have everything working
     env: {
       ...process.env,
       PULSE_SINK: 'discord_sink',
@@ -22,105 +23,104 @@ async function startDiscord() {
     },
     args: [
       '--no-sandbox',
-      '--use-fake-ui-for-media-stream'
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--use-fake-ui-for-media-stream',
+      '--disable-features=IsolateOrigins,site-per-process'
     ]
   });
 
   const page = await browser.newPage();
 
-  await page.goto('https://discord.com/login', { waitUntil: 'networkidle0' });
-  await page.type('input[name="email"]', process.env.DISCORD_USERNAME);
-  await page.type('input[name="password"]', process.env.DISCORD_PASSWORD);
-
-  await Promise.all([
-    page.click('button[type="submit"]'),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
-
-  console.log("Logged in.");
-
-  await page.goto('https://discord.com/channels/1384629482610102473/1384629483205820541', {
-    waitUntil: 'networkidle0'
+  // Optional: log failed network requests
+  page.on('requestfailed', request => {
+    console.log(`❌ Request failed: ${request.url()} — ${request.failure().errorText}`);
   });
 
-  console.log("Channel loaded.");
-  await page.waitForSelector('#app-mount');
-  await new Promise(resolve => setTimeout(resolve, 5000));
+  try {
+    await page.goto('https://discord.com/login', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60000
+    });
 
-  let disconnectButton = null;
-  const buttons = await page.$$('button');
-  for (const btn of buttons) {
-    const text = await page.evaluate(el => el.textContent, btn);
-    if (text.includes('Disconnect')) {
-      disconnectButton = btn;
-      break;
-    }
-  }
+    await page.type('input[name="email"]', process.env.DISCORD_USERNAME);
+    await page.type('input[name="password"]', process.env.DISCORD_PASSWORD);
 
-  if (disconnectButton) {
-    console.log("Already connected to voice.");
-  } else {
-    console.log("Looking for Join Voice...");
+    await page.click('button[type="submit"]');
+    await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 });
+    console.log("✅ Logged in.");
 
-    let joinButton = null;
+    await page.goto('https://discord.com/channels/1384629482610102473/1384629483205820541', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60000
+    });
+    console.log("✅ Channel loaded.");
+
+    await page.waitForSelector('#app-mount', { timeout: 60000 });
+    await new Promise(resolve => setTimeout(resolve, 5000));
+
+    let disconnectButton = null;
+    const buttons = await page.$$('button');
     for (const btn of buttons) {
       const text = await page.evaluate(el => el.textContent, btn);
-      if (text.includes('Join Voice')) {
-        joinButton = btn;
+      if (text.includes('Disconnect')) {
+        disconnectButton = btn;
         break;
       }
     }
 
-    if (joinButton) {
-      console.log("Clicking Join Voice...");
-      await joinButton.click();
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
-      console.log("Looking for Turn On Camera button...");
-      const videoButton = await page.$('button[aria-label="Turn On Camera"]');
-
-      if (videoButton) {
-        console.log("Clicking Turn On Camera...");
-        await videoButton.click();
-        console.log("Camera should now be enabled in Discord.");
-      } else {
-        console.log("Could not find Turn On Camera button.");
-        await page.screenshot({ path: 'no_video_button.png' });
-      }
-      await page.click('button[aria-label="User Settings"]');
-        await new Promise(resolve => setTimeout(resolve, 1000)); // let the menu load
-
-        const voiceAndVideo = await page.$x("//div[contains(text(), 'Voice & Video')]");
-        if (voiceAndVideo.length) {
-        await voiceAndVideo[0].click();
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-
-        console.log("Opening input device dropdown...");
-        await page.click('div[role="combobox"]:has(div:has-text("Input Device"))');
-
-        console.log("Selecting 'Remapped Monitor of discord_sink'...");
-        const deviceOptions = await page.$$('div[role="option"]');
-        for (const option of deviceOptions) {
-        const text = await page.evaluate(el => el.textContent, option);
-        if (text.includes('Remapped Monitor of discord_sink')) {
-            await option.click();
-            console.log("Input device set.");
-            break;
-        }
-        }
-
-
+    if (disconnectButton) {
+      console.log("🔊 Already connected to voice.");
     } else {
-      console.log("No Join Voice button found!");
-      await page.screenshot({ path: 'no_join_button.png' });
-    }
-  }
+      console.log("🔍 Looking for Join Voice...");
 
-  const pid = browser.process().pid;
-  fs.writeFileSync(PID_FILE, pid.toString(), 'utf-8');
-  console.log(`Chromium PID saved: ${pid}`);
-  console.log("Virtual camera started.");
+      let joinButton = null;
+      for (const btn of buttons) {
+        const text = await page.evaluate(el => el.textContent, btn);
+        if (text.includes('Join Voice')) {
+          joinButton = btn;
+          break;
+        }
+      }
+
+      if (joinButton) {
+        console.log("🎤 Clicking Join Voice...");
+        await joinButton.click();
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+        console.log("🎥 Looking for Turn On Camera button...");
+        const videoButton = await page.$('button[aria-label="Turn On Camera"]');
+        if (videoButton) {
+          console.log("📸 Clicking Turn On Camera...");
+          await videoButton.click();
+        } else {
+          console.warn("⚠️ Could not find Turn On Camera button.");
+          await page.screenshot({ path: 'no_video_button.png' });
+        }
+
+        // Optionally try to open settings and set audio input (fragile - can break easily)
+        // You may want to comment this out unless verified
+        /*
+        await page.click('button[aria-label="User Settings"]');
+        await page.click('div:has-text("Voice & Video")');
+        await page.select('#input-device-dropdown', 'Remapped Monitor of discord_sink');
+        */
+      } else {
+        console.warn("⚠️ No Join Voice button found!");
+        await page.screenshot({ path: 'no_join_button.png' });
+      }
+    }
+
+    const pid = browser.process().pid;
+    fs.writeFileSync(PID_FILE, pid.toString(), 'utf-8');
+    console.log(`✅ Chromium PID saved: ${pid}`);
+    console.log("🎥 Virtual camera started.");
+  } catch (err) {
+    console.error("❌ Discord automation failed:", err);
+    await page.screenshot({ path: 'discord_error.png' });
+    await browser.close();
+  }
 }
 
 function stopDiscord() {
