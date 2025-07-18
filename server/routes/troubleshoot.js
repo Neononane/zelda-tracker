@@ -33,7 +33,7 @@ router.get('/scene-sources', async (req, res) => {
     await ensureConnection();
 
     const { sceneItems } = await obs.call('GetSceneItemList', { sceneName });
-    const audioKinds = ['ffmpeg_source', 'wasapi_input_capture', 'wasapi_output_capture', 'pulse_input', 'pulse_output'];
+    const audioKinds = ['ffmpeg_source', 'wasapi_input_capture', 'wasapi_output_capture', 'pulse_input', 'pulse_output', 'pulse_input_capture'];
 
     const sources = [];
     for (const item of sceneItems) {
