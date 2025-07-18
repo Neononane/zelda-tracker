@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OBS Troubleshooting Panel</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #1e1e1e;
+      color: #ffffff;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      color: #61dafb;
+    }
+    .panel {
+      margin-bottom: 30px;
+      padding: 20px;
+      background-color: #2e2e2e;
+      border-radius: 8px;
+    }
+    select, button {
+      margin: 5px;
+      padding: 10px;
+      font-size: 16px;
+    }
+    .source-list {
+      margin-top: 10px;
+    }
+    .source-item {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>OBS Troubleshooting Panel</h1>
+
+  <div class="panel">
+    <h2>Scene Selection</h2>
+    <select id="sceneSelect"></select>
+    <button onclick="loadSceneSources()">Load Scene</button>
+  </div>
+
+  <div class="panel">
+    <h2>Scene Sources</h2>
+    <div id="sourceList" class="source-list"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Audio Controls</h2>
+    <div id="audioControls"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Virtual Camera</h2>
+    <button onclick="toggleVirtualCam('start')">Start Virtual Cam</button>
+    <button onclick="toggleVirtualCam('stop')">Stop Virtual Cam</button>
+  </div>
+
+  <div class="panel">
+    <h2>Streaming</h2>
+    <button onclick="toggleStream('start')">Start Stream</button>
+    <button onclick="toggleStream('stop')">Stop Stream</button>
+  </div>
+
+  <script>
+    const sceneSelect = document.getElementById('sceneSelect');
+    const sourceList = document.getElementById('sourceList');
+    const audioControls = document.getElementById('audioControls');
+
+    async function fetchJSON(url, options = {}) {
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error(`Failed to fetch ${url}`);
+      return await res.json();
+    }
+
+    async function loadScenes() {
+      const data = await fetchJSON('/api/troubleshoot/scenes');
+      sceneSelect.innerHTML = data.scenes.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    async function loadSceneSources() {
+      const scene = sceneSelect.value;
+      const data = await fetchJSON(`/api/troubleshoot/scene-sources?scene=${encodeURIComponent(scene)}`);
+      sourceList.innerHTML = data.sources.map(s => `
+        <div class="source-item">
+          ${s.name} 
+          <button onclick="muteSource('${s.name}', true)">Mute</button>
+          <button onclick="muteSource('${s.name}', false)">Unmute</button>
+        </div>`).join('');
+    }
+
+    async function muteSource(name, mute) {
+      await fetchJSON('/api/troubleshoot/audio-mute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, mute })
+      });
+    }
+
+    async function toggleVirtualCam(action) {
+      await fetchJSON('/api/troubleshoot/virtualcam', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      });
+    }
+
+    async function toggleStream(action) {
+      await fetchJSON('/api/troubleshoot/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      });
+    }
+
+    loadScenes().catch(console.error);
+  </script>
+</body>
+</html>

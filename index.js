@@ -10,6 +10,7 @@ const obsPagesRouter = require('./server/routes/raceid');
 const startStreamRouter = require('./server/routes/startStream');
 const endStreamRoutes = require("./server/routes/endStream.js");
 const initializeStreamRoutes = require("./server/routes/initializeStream.js");
+const troubleshootRoutes = require('./server/routes/troubleshoot');
 
 const app = express();
 const server = http.createServer(app);
@@ -23,6 +24,7 @@ app.use("/api", startStreamRouter);
 app.use("/restream",obsPagesRouter);
 app.use(endStreamRoutes);
 app.use(initializeStreamRoutes);
+app.use('/api/troubleshoot', troubleshootRoutes);
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
