@@ -88,12 +88,12 @@ async function startDiscord() {
         await page.screenshot({ path: 'no_video_button.png' });
       }
       await page.click('button[aria-label="User Settings"]');
-        await page.waitForTimeout(1000); // let the menu load
+        await new Promise(resolve => setTimeout(resolve, 1000)); // let the menu load
 
         const voiceAndVideo = await page.$x("//div[contains(text(), 'Voice & Video')]");
         if (voiceAndVideo.length) {
         await voiceAndVideo[0].click();
-        await page.waitForTimeout(1000);
+        await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
         console.log("Opening input device dropdown...");
